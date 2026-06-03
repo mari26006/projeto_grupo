@@ -3,6 +3,8 @@
 // =============================================
 
 let currentSlot = null;
+// placeholder for tarefas data; will be populated from template JSON
+var TAREFAS_DATA = {};
 
 // Tempos de construção em segundos (têm de coincidir com o backend)
 const TEMPOS_CONSTRUCAO = {
@@ -35,12 +37,45 @@ function abrirMenuTarefas(numSlot, tipo) {
             <span>⏱ ${minutos} min</span>
             <span>🎁 +${t.recompensa} Moedas</span>
         `;
-        div.onclick = function() { darOrdem(numSlot, t.id); };
+        // marcar para event delegation (substitui onclick inline)
+        div.setAttribute('data-action', 'darOrdem');
+        div.setAttribute('data-slot', numSlot);
+        div.setAttribute('data-tarefa-id', t.id);
         container.appendChild(div);
     });
 
     document.getElementById('modal-tarefas').style.display = 'flex';
 }
+
+// Event delegation: trata elementos com data-action
+document.addEventListener('click', function(e) {
+    let el = e.target;
+    while (el && el !== document) {
+        if (el.dataset && el.dataset.action) {
+            const action = el.dataset.action;
+            const slot = el.dataset.slot ? parseInt(el.dataset.slot) : null;
+            const tipo = el.dataset.tipo || null;
+            const tarefaId = el.getAttribute('data-tarefa-id');
+
+            if (action === 'abrirMenuConstruir' && slot) {
+                abrirMenuConstruir(slot);
+            } else if (action === 'abrirMenuTarefas' && slot && tipo) {
+                abrirMenuTarefas(slot, tipo);
+            } else if (action === 'construir' && tipo) {
+                construir(currentSlot, tipo);
+            } else if (action === 'recolher' && slot) {
+                recolher(slot);
+            } else if (action === 'fecharModal') {
+                fecharModal();
+            } else if (action === 'darOrdem' && slot && tarefaId) {
+                darOrdem(slot, tarefaId);
+            }
+
+            break;
+        }
+        el = el.parentNode;
+    }
+});
 
 function fecharModal() {
     document.getElementById('modal-construir').style.display = 'none';
@@ -250,6 +285,16 @@ function pollingEstado() {
 
 // ---- INIT ----
 document.addEventListener('DOMContentLoaded', function() {
+    // Ler dados JSON embutidos no template (script[type=application/json])
+    const tarefasEl = document.getElementById('tarefas-data');
+    if (tarefasEl) {
+        try {
+            TAREFAS_DATA = JSON.parse(tarefasEl.textContent || tarefasEl.innerText || '{}');
+        } catch (e) {
+            console.error('Falha ao parsear TAREFAS_DATA:', e);
+            TAREFAS_DATA = {};
+        }
+    }
     iniciarContadores();
     pollingEstado();
 });

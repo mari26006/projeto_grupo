@@ -400,6 +400,15 @@ body {
     font-size: 0.9rem;
 }
 
+/* Forçar cor de texto neutra no navbar (evita letras em tom rosa/vermelho) */
+.navbar .nav-logo,
+.navbar .recurso,
+.navbar .nav-user,
+.navbar a,
+.navbar span {
+    color: var(--text);
+}
+
 .btn-logout {
     background: transparent;
     color: var(--text);

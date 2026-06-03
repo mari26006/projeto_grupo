@@ -31,7 +31,7 @@
                         <div class="slot-icone">➕</div>
                         <p>Slot {{ slot.numero }}</p>
                         <p class="slot-sub">Clica para construir</p>
-                        <button class="btn btn-slot" onclick="abrirMenuConstruir({{ slot.numero }})">Construir</button>
+                        <button type="button" class="btn btn-slot" data-action="abrirMenuConstruir" data-slot="{{ slot.numero }}" aria-label="Construir slot {{ slot.numero }}">Construir</button>
                     </div>
 
                     {% elif slot.estado == 'construindo' %}
@@ -52,7 +52,7 @@
                         <div class="slot-icone">{{ tipo_info.emoji }}</div>
                         <p>{{ tipo_info.nome }}</p>
                         <p class="slot-sub estado-ativo">✅ Pronto para tarefas!</p>
-                        <button class="btn btn-slot btn-acao" onclick="abrirMenuTarefas({{ slot.numero }}, '{{ slot.tipo }}')">Dar Ordem</button>
+                        <button type="button" class="btn btn-slot btn-acao" data-action="abrirMenuTarefas" data-slot="{{ slot.numero }}" data-tipo="{{ slot.tipo }}" aria-label="Dar ordem no slot {{ slot.numero }}">Dar Ordem</button>
                     </div>
 
                     {% elif slot.estado == 'processando' %}
@@ -73,7 +73,7 @@
                         <div class="slot-icone">🎉</div>
                         <p>{{ tipo_info.nome }}</p>
                         <p class="slot-sub estado-concluida">{{ slot.tarefa_nome }}</p>
-                        <button class="btn btn-slot btn-recolher" onclick="recolher({{ slot.numero }})">Seguir em Frente ✨</button>
+                        <button type="button" class="btn btn-slot btn-recolher" data-action="recolher" data-slot="{{ slot.numero }}" aria-label="Seguir em frente slot {{ slot.numero }}">Seguir em Frente ✨</button>
                     </div>
                     {% endif %}
 
@@ -116,27 +116,27 @@
     <div class="modal">
         <h3>🏗️ Escolhe o que construir</h3>
         <p id="modal-construir-slot-info"></p>
-        <div class="opcoes-construir">
-            <div class="opcao-construir" onclick="construir(currentSlot, 'bau')">
+            <div class="opcoes-construir">
+            <div class="opcao-construir" data-action="construir" data-tipo="bau">
                 <span class="opcao-emoji">📦</span>
                 <strong>Baú das Recordações Físicas</strong>
                 <span class="opcao-custo">🪙 50 Moedas</span>
                 <span class="opcao-tempo">⏱ 1 minuto</span>
             </div>
-            <div class="opcao-construir" onclick="construir(currentSlot, 'arquivo')">
+            <div class="opcao-construir" data-action="construir" data-tipo="arquivo">
                 <span class="opcao-emoji">💻</span>
                 <strong>Arquivo Digital</strong>
                 <span class="opcao-custo">🪙 150 Moedas</span>
                 <span class="opcao-tempo">⏱ 2 minutos</span>
             </div>
-            <div class="opcao-construir" onclick="construir(currentSlot, 'mente')">
+            <div class="opcao-construir" data-action="construir" data-tipo="mente">
                 <span class="opcao-emoji">🧠</span>
                 <strong>A Mente e os Pensamentos</strong>
                 <span class="opcao-custo">🪙 300 Moedas</span>
                 <span class="opcao-tempo">⏱ 3 minutos</span>
             </div>
         </div>
-        <button class="btn btn-cancelar" onclick="fecharModal()">Cancelar</button>
+        <button type="button" class="btn btn-cancelar" data-action="fecharModal">Cancelar</button>
     </div>
 </div>
 
@@ -145,7 +145,7 @@
     <div class="modal">
         <h3>📋 Escolhe uma tarefa</h3>
         <div class="opcoes-tarefas" id="opcoes-tarefas-lista"></div>
-        <button class="btn btn-cancelar" onclick="fecharModal()">Cancelar</button>
+        <button type="button" class="btn btn-cancelar" data-action="fecharModal">Cancelar</button>
     </div>
 </div>
 
@@ -155,9 +155,6 @@
 {% endblock %}
 
 {% block scripts %}
+<script id="tarefas-data" type="application/json">{{ tarefas | tojson | safe }}</script>
 <script src="{{ url_for('static', filename='js/jogo.js') }}"></script>
-<script>
-// Dados das tarefas passados do backend para o JS
-const TAREFAS_DATA = {{ tarefas | tojson }};
-</script>
 {% endblock %}
