@@ -443,7 +443,11 @@ body {
 }
 
 .secao-principal {
-    /* coluna principal */
+    /* coluna principal - espaço reservado para estilos da coluna principal */
+    min-width: 0;
+    /* sobe ligeiramente a secção principal para melhor alinhamento visual */
+    transform: translateY(-12px);
+    transition: transform 0.18s ease;
 }
 
 .secao-titulo {
