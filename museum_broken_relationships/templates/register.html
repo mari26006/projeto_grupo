@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card">
+        <div class="auth-header">
+            <a href="/" class="voltar">← Voltar</a>
+            <h2>💔 Contrato de Compromisso</h2>
+            <p>com o Amor-Próprio</p>
+        </div>
+
+        {% if erro %}
+        <div class="alerta erro">{{ erro }}</div>
+        {% endif %}
+
+        <form method="POST" action="/register">
+            <div class="campo">
+                <label>O teu nome de guerra</label>
+                <input type="text" name="username" placeholder="ex: Afonso20" required maxlength="80">
+            </div>
+            <div class="campo">
+                <label>Email</label>
+                <input type="email" name="email" placeholder="o-teu@email.com" required maxlength="120">
+            </div>
+            <div class="campo">
+                <label>Password</label>
+                <input type="password" name="password" placeholder="Cria uma password forte" required minlength="6">
+            </div>
+            <div class="recursos-iniciais">
+                <span>🪙 Começas com: <strong>100 Moedas</strong></span>
+                <span>💧 e <strong>50 Lágrimas</strong></span>
+            </div>
+            <button type="submit" class="btn btn-principal btn-full">Assinar o Contrato</button>
+        </form>
+        <p class="auth-link">Já tens conta? <a href="/login">Faz Login</a></p>
+    </div>
+</div>
+{% endblock %}

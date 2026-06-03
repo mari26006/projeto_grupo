@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Museum of Broken Relationships</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <button id="theme-toggle" type="button" aria-label="Alternar modo escuro">🌙</button>
+    {% block content %}{% endblock %}
+    {% block scripts %}{% endblock %}
+    <script>
+        const themeToggle = document.getElementById('theme-toggle');
+        const storedTheme = localStorage.getItem('preferred-theme');
+        const body = document.body;
+
+        const applyTheme = (theme) => {
+            if (theme === 'dark') {
+                body.classList.add('dark-mode');
+                themeToggle.textContent = '☀️';
+            } else {
+                body.classList.remove('dark-mode');
+                themeToggle.textContent = '🌙';
+            }
+        };
+
+        const getPreferredTheme = () => {
+            if (storedTheme) return storedTheme;
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        };
+
+        applyTheme(getPreferredTheme());
+
+        themeToggle.addEventListener('click', () => {
+            const nextTheme = body.classList.contains('dark-mode') ? 'light' : 'dark';
+            localStorage.setItem('preferred-theme', nextTheme);
+            applyTheme(nextTheme);
+        });
+    </script>
+</body>
+</html>
