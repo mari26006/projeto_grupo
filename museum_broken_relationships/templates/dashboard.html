@@ -1,89 +1,91 @@
 {% extends 'base.html' %}
+{% block body_class %}dashboard-page{% endblock %}
+{% block site_header %}{% endblock %}
 {% block content %}
-<!-- NAVBAR -->
-<nav class="navbar">
-    <div class="nav-logo">💔 Broken Relationships</div>
-    <div class="nav-recursos">
-        <span class="recurso" id="recurso-amor">🪙 <strong id="amor-valor">{{ user.amor_proprio }}</strong> Amor-Próprio</span>
-        <span class="recurso" id="recurso-lagrimas">💧 <strong id="lagrimas-valor">{{ user.lagrimas }}</strong> Lágrimas</span>
-    </div>
-    <div class="nav-user">
-        <span>{{ user.username }}</span>
-        <a href="/logout" class="btn-logout">Logout</a>
-    </div>
-</nav>
-
-<div class="dashboard">
-    <!-- SLOTS DE CONSTRUÇÃO -->
-    <div class="secao-principal">
-        <h2 class="secao-titulo">O teu Espaço de Cura</h2>
-        <p class="secao-desc">Constrói os teus espaços para processar o fim da relação</p>
-
-        <div class="slots-grid">
-            {% for slot in slots %}
-            <div class="slot" id="slot-{{ slot.numero }}" data-numero="{{ slot.numero }}" data-estado="{{ slot.estado }}" data-tipo="{{ slot.tipo or '' }}">
-
-                {% if slot.estado == 'vazio' %}
-                <div class="slot-vazio">
-                    <div class="slot-icone">➕</div>
-                    <p>Slot {{ slot.numero }}</p>
-                    <p class="slot-sub">Clica para construir</p>
-                    <button class="btn btn-slot" onclick="abrirMenuConstruir({{ slot.numero }})">Construir</button>
-                </div>
-
-                {% elif slot.estado == 'construindo' %}
-                {% set tipo_info = construcoes[slot.tipo] %}
-                <div class="slot-construindo">
-                    <div class="slot-icone">🔨</div>
-                    <p>{{ tipo_info.nome }}</p>
-                    <p class="slot-sub">Em construção...</p>
-                    <div class="barra-progresso">
-                        <div class="barra-fill" id="barra-{{ slot.numero }}" style="width:0%"></div>
-                    </div>
-                    <p class="contador" id="contador-{{ slot.numero }}">A calcular...</p>
-                </div>
-
-                {% elif slot.estado == 'ativo' %}
-                {% set tipo_info = construcoes[slot.tipo] %}
-                <div class="slot-ativo">
-                    <div class="slot-icone">{{ tipo_info.emoji }}</div>
-                    <p>{{ tipo_info.nome }}</p>
-                    <p class="slot-sub estado-ativo">✅ Pronto para tarefas!</p>
-                    <button class="btn btn-slot btn-acao" onclick="abrirMenuTarefas({{ slot.numero }}, '{{ slot.tipo }}')">Dar Ordem</button>
-                </div>
-
-                {% elif slot.estado == 'processando' %}
-                {% set tipo_info = construcoes[slot.tipo] %}
-                <div class="slot-processando">
-                    <div class="slot-icone">⏳</div>
-                    <p>{{ tipo_info.nome }}</p>
-                    <p class="slot-sub">{{ slot.tarefa_nome }}</p>
-                    <div class="barra-progresso">
-                        <div class="barra-fill barra-tarefa" id="barra-{{ slot.numero }}" style="width:0%"></div>
-                    </div>
-                    <p class="contador" id="contador-{{ slot.numero }}">A calcular...</p>
-                </div>
-
-                {% elif slot.estado == 'concluida' %}
-                {% set tipo_info = construcoes[slot.tipo] %}
-                <div class="slot-concluida piscar">
-                    <div class="slot-icone">🎉</div>
-                    <p>{{ tipo_info.nome }}</p>
-                    <p class="slot-sub estado-concluida">{{ slot.tarefa_nome }}</p>
-                    <button class="btn btn-slot btn-recolher" onclick="recolher({{ slot.numero }})">Seguir em Frente ✨</button>
-                </div>
-                {% endif %}
-
-            </div>
-            {% endfor %}
+<header role="banner">
+    <nav class="navbar nav-inner" aria-label="Navegação principal">
+        <div class="nav-logo">💔 Broken Relationships</div>
+        <div class="nav-recursos">
+            <span class="recurso" id="recurso-amor">🪙 <strong id="amor-valor">{{ user.amor_proprio }}</strong> Amor-Próprio</span>
+            <span class="recurso" id="recurso-lagrimas">💧 <strong id="lagrimas-valor">{{ user.lagrimas }}</strong> Lágrimas</span>
         </div>
-    </div>
+        <div class="nav-user">
+            <span>{{ user.username }}</span>
+            <a href="/logout" class="btn-logout">Logout</a>
+        </div>
+    </nav>
+</header>
 
-    <!-- PAINEL LATERAL -->
-    <div class="painel-lateral">
-        <!-- LEADERBOARD -->
+<main class="dashboard" id="dashboard-main">
+    <section class="secao-principal" aria-labelledby="secao-titulo">
+        <article>
+            <h2 id="secao-titulo" class="secao-titulo">O teu Espaço de Cura</h2>
+            <p class="secao-desc">Constrói os teus espaços para processar o fim da relação</p>
+
+            <div class="slots-grid" role="list">
+                {% for slot in slots %}
+                <div class="slot" id="slot-{{ slot.numero }}" role="listitem" data-numero="{{ slot.numero }}" data-estado="{{ slot.estado }}" data-tipo="{{ slot.tipo or '' }}">
+
+                    {% if slot.estado == 'vazio' %}
+                    <div class="slot-vazio">
+                        <div class="slot-icone">➕</div>
+                        <p>Slot {{ slot.numero }}</p>
+                        <p class="slot-sub">Clica para construir</p>
+                        <button class="btn btn-slot" onclick="abrirMenuConstruir({{ slot.numero }})">Construir</button>
+                    </div>
+
+                    {% elif slot.estado == 'construindo' %}
+                    {% set tipo_info = construcoes[slot.tipo] %}
+                    <div class="slot-construindo">
+                        <div class="slot-icone">🔨</div>
+                        <p>{{ tipo_info.nome }}</p>
+                        <p class="slot-sub">Em construção...</p>
+                        <div class="barra-progresso">
+                            <div class="barra-fill" id="barra-{{ slot.numero }}" style="width:0%"></div>
+                        </div>
+                        <p class="contador" id="contador-{{ slot.numero }}">A calcular...</p>
+                    </div>
+
+                    {% elif slot.estado == 'ativo' %}
+                    {% set tipo_info = construcoes[slot.tipo] %}
+                    <div class="slot-ativo">
+                        <div class="slot-icone">{{ tipo_info.emoji }}</div>
+                        <p>{{ tipo_info.nome }}</p>
+                        <p class="slot-sub estado-ativo">✅ Pronto para tarefas!</p>
+                        <button class="btn btn-slot btn-acao" onclick="abrirMenuTarefas({{ slot.numero }}, '{{ slot.tipo }}')">Dar Ordem</button>
+                    </div>
+
+                    {% elif slot.estado == 'processando' %}
+                    {% set tipo_info = construcoes[slot.tipo] %}
+                    <div class="slot-processando">
+                        <div class="slot-icone">⏳</div>
+                        <p>{{ tipo_info.nome }}</p>
+                        <p class="slot-sub">{{ slot.tarefa_nome }}</p>
+                        <div class="barra-progresso">
+                            <div class="barra-fill barra-tarefa" id="barra-{{ slot.numero }}" style="width:0%"></div>
+                        </div>
+                        <p class="contador" id="contador-{{ slot.numero }}">A calcular...</p>
+                    </div>
+
+                    {% elif slot.estado == 'concluida' %}
+                    {% set tipo_info = construcoes[slot.tipo] %}
+                    <div class="slot-concluida piscar">
+                        <div class="slot-icone">🎉</div>
+                        <p>{{ tipo_info.nome }}</p>
+                        <p class="slot-sub estado-concluida">{{ slot.tarefa_nome }}</p>
+                        <button class="btn btn-slot btn-recolher" onclick="recolher({{ slot.numero }})">Seguir em Frente ✨</button>
+                    </div>
+                    {% endif %}
+
+                </div>
+                {% endfor %}
+            </div>
+        </article>
+    </section>
+
+    <aside class="painel-lateral" aria-labelledby="painel-titulo">
         <div class="painel-secao">
-            <h3>🏆 Top do Desamor</h3>
+            <h3 id="painel-titulo">🏆 Top do Desamor</h3>
             <table class="leaderboard">
                 <thead>
                     <tr><th>#</th><th>Nome</th><th>Pontos</th></tr>
@@ -105,8 +107,9 @@
                 </tbody>
             </table>
         </div>
-    </div>
-</div>
+        <button id="theme-toggle" class="btn theme-toggle-inline" type="button" aria-label="Alternar modo escuro">Modo escuro</button>
+    </aside>
+</main>
 
 <!-- MODAL: CONSTRUIR -->
 <div class="modal-overlay" id="modal-construir" style="display:none">

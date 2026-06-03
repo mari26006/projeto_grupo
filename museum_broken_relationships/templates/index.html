@@ -1,16 +1,16 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="landing">
+<section class="landing" aria-labelledby="landing-title">
     <div class="landing-content">
-        <div class="landing-title">
+        <header class="landing-header">
             <span class="titulo-pequeno">💔 bem-vindo ao</span>
-            <h1>Museum of<br><em>Broken Relationships</em></h1>
+            <h1 id="landing-title">Museum of<br><em>Broken Relationships</em></h1>
             <p class="subtitulo">Transforma a tua dor em Amor-Próprio.<br>Sobe no ranking. Segue em frente.</p>
-        </div>
+        </header>
         <div class="landing-botoes">
             <a href="/register" class="btn btn-principal">Começar a Superar</a>
             <a href="/login" class="btn btn-secundario">Já tenho conta</a>
         </div>
     </div>
-</div>
+</section>
 {% endblock %}
