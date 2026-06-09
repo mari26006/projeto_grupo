@@ -54,6 +54,10 @@ body {
     color: var(--text);
 }
 
+body.dark-mode {
+    background: url("../img/fundo_escuro.jpeg") center top / cover fixed no-repeat;
+}
+
 /* ===========================
    LANDING PAGE
    =========================== */
