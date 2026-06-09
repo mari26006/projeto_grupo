@@ -37,8 +37,9 @@
                      linear-gradient(135deg, #15100f 0%, #241416 58%, #321821 100%);
     --text: #fff7f2;
     --text-secondary: #d4beb6;
-    --card-bg: #211817;
-    --border: rgba(232, 160, 180, 0.22);
+    --card-bg: #1f171b;
+    --dashboard-panel-bg: #2a2026;
+    --border: rgba(232, 160, 180, 0.24);
     --accent: #f08caf;
     --rosa-escuro: #f08caf;
     --cinza: #b9aaa4;
@@ -532,8 +533,15 @@ body.dark-mode {
 .dark-mode .slot,
 .dark-mode .painel-secao,
 .dark-mode .modal {
-    background: var(--card-bg);
+    background: var(--dashboard-panel-bg, var(--card-bg));
     border-color: var(--border);
+}
+
+body.dark-mode .slot,
+body.dark-mode .painel-secao,
+body.dark-mode .modal {
+    background: #2a2026 !important;
+    border-color: rgba(232, 160, 180, 0.28);
 }
 
 .slot-vazio {
