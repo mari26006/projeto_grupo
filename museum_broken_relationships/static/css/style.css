@@ -65,13 +65,35 @@ body.dark-mode {
 
 .landing {
     min-height: 100vh;
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     background: var(--landing-bg);
+    overflow: hidden;
+}
+
+.landing-branch {
+    position: absolute;
+    top: 31%;
+    width: clamp(220px, 30vw, 420px);
+    height: auto;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.landing-branch-left {
+    left: clamp(-180px, -9vw, -72px);
+    transform: scaleX(-1);
+}
+
+.landing-branch-right {
+    right: clamp(-180px, -9vw, -72px);
 }
 
 .landing-content {
+    position: relative;
+    z-index: 1;
     text-align: center;
     padding: 40px 20px;
     max-width: 600px;
