@@ -8,9 +8,9 @@ var TAREFAS_DATA = {};
 
 // Tempos de construção em segundos (têm de coincidir com o backend)
 const TEMPOS_CONSTRUCAO = {
-    'bau': 60,
-    'arquivo': 120,
-    'mente': 180
+    'bau': 3,
+    'arquivo': 3,
+    'mente': 3
 };
 
 // ---- MODAL ----
@@ -28,14 +28,15 @@ function abrirMenuTarefas(numSlot, tipo) {
     container.innerHTML = '';
 
     tarefas.forEach(function(t) {
-        const minutos = Math.floor(t.tempo / 60);
+        const tempoTexto = t.tempo < 60 ? t.tempo + 's' : Math.floor(t.tempo / 60) + ' min';
+        const hint = t.hint ? `<span class="opcao-hint">${t.hint}</span>` : '<span class="opcao-hint">Resultado incerto</span>';
         const div = document.createElement('div');
         div.className = 'opcao-tarefa';
         div.innerHTML = `
             <strong>${t.nome}</strong>
             <span>💧 ${t.lagrimas} Lágrimas</span>
-            <span>⏱ ${minutos} min</span>
-            <span>🎁 +${t.recompensa} Moedas</span>
+            <span>⏱ ${tempoTexto}</span>
+            ${hint}
         `;
         // marcar para event delegation (substitui onclick inline)
         div.setAttribute('data-action', 'darOrdem');
@@ -103,11 +104,15 @@ function mostrarNotificacao(msg) {
 
 // ---- ATUALIZAR RECURSOS NA NAVBAR ----
 
-function atualizarRecursos(amor, lagrimas) {
+function atualizarRecursos(amor, lagrimas, estado) {
     const elAmor = document.getElementById('amor-valor');
     const elLag = document.getElementById('lagrimas-valor');
+    const elBar = document.getElementById('amor-progresso');
+    const elEstado = document.getElementById('estado-emocional');
     if (elAmor && amor !== null && amor !== undefined) elAmor.textContent = amor;
     if (elLag && lagrimas !== null && lagrimas !== undefined) elLag.textContent = lagrimas;
+    if (elBar && amor !== null && amor !== undefined) elBar.style.width = Math.max(0, Math.min(100, amor)) + '%';
+    if (elEstado && estado) elEstado.textContent = estado;
 }
 
 // ---- CONSTRUIR ----
@@ -124,7 +129,7 @@ function construir(numSlot, tipo) {
         if (data.erro) {
             mostrarNotificacao('❌ ' + data.erro);
         } else {
-            atualizarRecursos(data.amor_proprio, null);
+            atualizarRecursos(data.amor_proprio, null, data.estado_emocional);
             mostrarNotificacao('🔨 Construção iniciada! Aguarda a conclusão.');
             setTimeout(function() { location.reload(); }, 500);
         }
@@ -171,8 +176,14 @@ function recolher(numSlot) {
         if (data.erro) {
             mostrarNotificacao('❌ ' + data.erro);
         } else {
-            atualizarRecursos(data.amor_proprio, data.lagrimas);
-            mostrarNotificacao('🎉 +' + data.recompensa + ' Moedas de Amor-Próprio! Seguiste em frente!');
+            const oldEstado = document.getElementById('estado-emocional')?.textContent;
+            atualizarRecursos(data.amor_proprio, data.lagrimas, data.estado_emocional);
+            mostrarNotificacao(data.mensagem || '🎉 Tarefa concluída!');
+            if (data.estado_emocional && oldEstado && data.estado_emocional !== oldEstado) {
+                setTimeout(function() {
+                    mostrarNotificacao('🎉 Novo Estado Desbloqueado! ' + oldEstado + ' → ' + data.estado_emocional);
+                }, 1200);
+            }
             setTimeout(function() { location.reload(); }, 1000);
         }
     })
@@ -265,7 +276,7 @@ function pollingEstado() {
             if (data.erro) return;
 
             // Atualiza recursos
-            atualizarRecursos(data.amor_proprio, data.lagrimas);
+            atualizarRecursos(data.amor_proprio, data.lagrimas, data.estado_emocional);
 
             // Verifica se algum slot mudou para 'concluida' e deve ser recarregado
             data.slots.forEach(function(s) {

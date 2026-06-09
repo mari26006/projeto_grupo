@@ -6,7 +6,16 @@
     <nav class="navbar nav-inner" aria-label="Navegação principal">
         <div class="nav-logo">💔 Broken Relationships</div>
         <div class="nav-recursos">
-            <span class="recurso" id="recurso-amor">🪙 <strong id="amor-valor">{{ user.amor_proprio }}</strong> Amor-Próprio</span>
+            <div class="amor-proprio-status">
+                <div class="amor-proprio-header">
+                    <span>❤️ Amor-Próprio:</span>
+                    <strong id="amor-valor">{{ user.amor_proprio }}</strong>/100
+                </div>
+                <div class="barra-progresso amor-bar">
+                    <div class="barra-fill" id="amor-progresso" style="width: {{ user.amor_proprio }}%"></div>
+                </div>
+                <div class="estado-emocional" id="estado-emocional">{{ user_estado }}</div>
+            </div>
             <span class="recurso" id="recurso-lagrimas">💧 <strong id="lagrimas-valor">{{ user.lagrimas }}</strong> Lágrimas</span>
         </div>
         <div class="nav-user">
@@ -85,10 +94,10 @@
 
     <aside class="painel-lateral" aria-labelledby="painel-titulo">
         <div class="painel-secao">
-            <h3 id="painel-titulo">🏆 Top do Desamor</h3>
+            <h3 id="painel-titulo">🏆 Top Amor-Próprio</h3>
             <table class="leaderboard">
                 <thead>
-                    <tr><th>#</th><th>Nome</th><th>Pontos</th></tr>
+                    <tr><th>#</th><th>Nome</th><th>Amor-Próprio</th><th>Estado</th></tr>
                 </thead>
                 <tbody>
                     {% for u in top_users %}
@@ -102,6 +111,7 @@
                         </td>
                         <td>{{ u.username }}</td>
                         <td>{{ u.amor_proprio }}</td>
+                        <td>{{ u.estado }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -121,19 +131,19 @@
                 <span class="opcao-emoji">📦</span>
                 <strong>Baú das Recordações Físicas</strong>
                 <span class="opcao-custo">🪙 50 Moedas</span>
-                <span class="opcao-tempo">⏱ 1 minuto</span>
+                <span class="opcao-tempo">⏱ 3s</span>
             </div>
             <div class="opcao-construir" data-action="construir" data-tipo="arquivo">
                 <span class="opcao-emoji">💻</span>
                 <strong>Arquivo Digital</strong>
                 <span class="opcao-custo">🪙 150 Moedas</span>
-                <span class="opcao-tempo">⏱ 2 minutos</span>
+                <span class="opcao-tempo">⏱ 3s</span>
             </div>
             <div class="opcao-construir" data-action="construir" data-tipo="mente">
                 <span class="opcao-emoji">🧠</span>
                 <strong>A Mente e os Pensamentos</strong>
                 <span class="opcao-custo">🪙 300 Moedas</span>
-                <span class="opcao-tempo">⏱ 3 minutos</span>
+                <span class="opcao-tempo">⏱ 3s</span>
             </div>
         </div>
         <button type="button" class="btn btn-cancelar" data-action="fecharModal">Cancelar</button>

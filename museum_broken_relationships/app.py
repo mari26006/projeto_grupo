@@ -27,7 +27,7 @@ def init_db():
             username TEXT UNIQUE NOT NULL,
             email TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
-            amor_proprio INTEGER DEFAULT 100,
+            amor_proprio INTEGER DEFAULT 50,
             lagrimas INTEGER DEFAULT 50,
             created_at TEXT DEFAULT (datetime('now'))
         );
@@ -61,6 +61,17 @@ def str_to_dt(s):
         return None
     return datetime.strptime(s, '%Y-%m-%d %H:%M:%S')
 
+def get_estado_emocional(amor_proprio):
+    if amor_proprio <= 20:
+        return '💔 Coração Partido'
+    if amor_proprio <= 40:
+        return '🌱 Recuperação'
+    if amor_proprio <= 60:
+        return '🏗️ Reconstrução'
+    if amor_proprio <= 80:
+        return '✨ Confiança'
+    return '👑 Amor-Próprio Máximo'
+
 # =====================
 # DADOS DAS CONSTRUÇÕES
 # =====================
@@ -69,35 +80,35 @@ CONSTRUCOES = {
     'bau': {
         'nome': 'Baú das Recordações Físicas',
         'custo': 50,
-        'tempo': 60,
+        'tempo': 3,
         'emoji': '📦'
     },
     'arquivo': {
         'nome': 'Arquivo Digital',
         'custo': 150,
-        'tempo': 120,
+        'tempo': 3,
         'emoji': '💻'
     },
     'mente': {
         'nome': 'A Mente e os Pensamentos',
         'custo': 300,
-        'tempo': 180,
+        'tempo': 3,
         'emoji': '🧠'
     }
 }
 
 TAREFAS = {
     'bau': [
-        {'id': 'doar_roupas', 'nome': 'Doar roupas do/a ex', 'lagrimas': 10, 'tempo': 300, 'recompensa': 200},
-        {'id': 'guardar_cartas', 'nome': 'Guardar cartas antigas', 'lagrimas': 5, 'tempo': 180, 'recompensa': 100},
+        {'id': 'doar_roupas', 'nome': 'Doar roupas do/a ex', 'lagrimas': 10, 'tempo': 3, 'amor_proprio_delta': 200, 'lagrimas_delta': 0, 'hidden': True, 'hint': 'Resultado incerto'},
+        {'id': 'guardar_cartas', 'nome': 'Guardar cartas antigas', 'lagrimas': 5, 'tempo': 3, 'amor_proprio_delta': -50, 'lagrimas_delta': 0, 'hidden': True, 'hint': 'Resultado incerto'},
     ],
     'arquivo': [
-        {'id': 'apagar_fotos', 'nome': 'Apagar fotografias antigas', 'lagrimas': 15, 'tempo': 420, 'recompensa': 350},
-        {'id': 'bloquear_redes', 'nome': 'Bloquear nas redes sociais', 'lagrimas': 20, 'tempo': 600, 'recompensa': 500},
+        {'id': 'apagar_fotos', 'nome': 'Apagar fotografias antigas', 'lagrimas': 15, 'tempo': 3, 'amor_proprio_delta': 150, 'lagrimas_delta': 0, 'hidden': True, 'hint': 'Resultado incerto'},
+        {'id': 'bloquear_redes', 'nome': 'Bloquear nas redes sociais', 'lagrimas': 20, 'tempo': 3, 'amor_proprio_delta': 100, 'lagrimas_delta': 0, 'hidden': True, 'hint': 'Resultado incerto'},
     ],
     'mente': [
-        {'id': 'meditacao', 'nome': 'Sessão de meditação', 'lagrimas': 25, 'tempo': 600, 'recompensa': 600},
-        {'id': 'diario', 'nome': 'Escrever no diário', 'lagrimas': 10, 'tempo': 300, 'recompensa': 250},
+        {'id': 'meditacao', 'nome': 'Sessão de meditação', 'lagrimas': 25, 'tempo': 3, 'amor_proprio_delta': 200, 'lagrimas_delta': 0, 'hidden': True, 'hint': 'Resultado incerto'},
+        {'id': 'diario', 'nome': 'Escrever no diário', 'lagrimas': 10, 'tempo': 3, 'amor_proprio_delta': -100, 'lagrimas_delta': 20, 'hidden': True, 'hint': 'Ganhas Lágrimas extra ⚠️'},
     ]
 }
 
@@ -190,10 +201,21 @@ def dashboard():
 
     slots = conn.execute('SELECT * FROM slot WHERE user_id = ? ORDER BY numero', (user['id'],)).fetchall()
     top_users = conn.execute('SELECT * FROM user ORDER BY amor_proprio DESC LIMIT 10').fetchall()
+    top_users = [
+        {
+            'id': u['id'],
+            'username': u['username'],
+            'amor_proprio': u['amor_proprio'],
+            'estado': get_estado_emocional(u['amor_proprio'])
+        }
+        for u in top_users
+    ]
+    user_estado = get_estado_emocional(user['amor_proprio'])
     conn.close()
 
     return render_template('dashboard.html',
         user=user,
+        user_estado=user_estado,
         slots=slots,
         construcoes=CONSTRUCOES,
         tarefas=TAREFAS,
@@ -238,7 +260,11 @@ def construir():
     novo_amor = user['amor_proprio'] - custo
     conn.close()
 
-    return jsonify({'sucesso': True, 'amor_proprio': novo_amor})
+    return jsonify({
+        'sucesso': True,
+        'amor_proprio': novo_amor,
+        'estado_emocional': get_estado_emocional(novo_amor)
+    })
 
 @app.route('/api/verificar_construcao', methods=['POST'])
 def verificar_construcao():
@@ -326,23 +352,43 @@ def recolher():
         conn.close()
         return jsonify({'erro': 'Nada para recolher'}), 400
 
-    recompensa = 0
+    tarefa = None
     for t in TAREFAS.get(slot['tipo'], []):
         if t['nome'] == slot['tarefa_nome']:
-            recompensa = t['recompensa']
+            tarefa = t
             break
 
-    conn.execute('UPDATE user SET amor_proprio = amor_proprio + ?, lagrimas = lagrimas + 10 WHERE id = ?',
-                 (recompensa, user['id']))
+    if not tarefa:
+        conn.close()
+        return jsonify({'erro': 'Tarefa inválida'}), 400
+
+    amor_delta = tarefa.get('amor_proprio_delta', 0)
+    lagrimas_delta = tarefa.get('lagrimas_delta', 0)
+    novo_amor = max(0, min(100, user['amor_proprio'] + amor_delta))
+    nova_lag = user['lagrimas'] + lagrimas_delta
+
+    conn.execute('UPDATE user SET amor_proprio = ?, lagrimas = ? WHERE id = ?',
+                 (novo_amor, nova_lag, user['id']))
     conn.execute('UPDATE slot SET estado = ?, tarefa_nome = NULL, tarefa_fim = NULL WHERE id = ?',
                  ('ativo', slot['id']))
     conn.commit()
-
-    novo_amor = user['amor_proprio'] + recompensa
-    nova_lag = user['lagrimas'] + 10
     conn.close()
 
-    return jsonify({'sucesso': True, 'amor_proprio': novo_amor, 'lagrimas': nova_lag, 'recompensa': recompensa})
+    if amor_delta >= 0:
+        mensagem = f'❤️ +{amor_delta} Amor-Próprio — Tomaste uma decisão saudável.'
+    else:
+        mensagem = f'💔 {amor_delta} Amor-Próprio — Essa escolha atrasou o teu processo de cura.'
+
+    if lagrimas_delta > 0:
+        mensagem += f' +{lagrimas_delta} Lágrimas'
+
+    return jsonify({
+        'sucesso': True,
+        'amor_proprio': novo_amor,
+        'lagrimas': nova_lag,
+        'mensagem': mensagem,
+        'estado_emocional': get_estado_emocional(novo_amor)
+    })
 
 @app.route('/api/verificar_tarefa', methods=['POST'])
 def verificar_tarefa():
@@ -402,6 +448,7 @@ def estado():
     return jsonify({
         'amor_proprio': user['amor_proprio'],
         'lagrimas': user['lagrimas'],
+        'estado_emocional': get_estado_emocional(user['amor_proprio']),
         'slots': slots_data
     })
 
