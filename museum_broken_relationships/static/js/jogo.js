@@ -1,6 +1,6 @@
 // =============================================
 // MUSEUM OF BROKEN RELATIONSHIPS - Jogo JS
-// =============================================
+// =============================================s
 
 let currentSlot = null;
 // placeholder for tarefas data; will be populated from template JSON
