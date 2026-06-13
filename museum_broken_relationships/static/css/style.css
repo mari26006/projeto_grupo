@@ -539,18 +539,6 @@ body.dark-mode {
     align-items: center;
     justify-content: center;
 }
-    background: white;
-    border-radius: 14px;
-    border: 2px solid #e8ddd8;
-    padding: 20px;
-    text-align: center;
-    box-shadow: var(--sombra);
-    transition: all 0.2s;
-    min-height: 180px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
 
 .dark-mode .slot,
 .dark-mode .painel-secao,
@@ -680,12 +668,6 @@ body.dark-mode .modal {
     padding: 20px;
     box-shadow: var(--sombra);
 }
-    background: white;
-    border-radius: 14px;
-    border: 2px solid #e8ddd8;
-    padding: 20px;
-    box-shadow: var(--sombra);
-}
 
 .painel-secao h3 {
     font-family: 'Playfair Display', serif;
@@ -735,18 +717,6 @@ body.dark-mode .modal {
 }
 
 .leaderboard td {
-    padding: 8px;
-    border-bottom: 1px solid var(--cinza-claro);
-}
-
-.linha-proprio {
-    background: #fce4ec;
-    font-weight: 700;
-}
-
-.dark-mode .linha-proprio {
-    background: rgba(240, 140, 175, 0.16);
-}
     padding: 8px;
     border-bottom: 1px solid var(--cinza-claro);
 }

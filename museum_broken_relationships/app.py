@@ -27,7 +27,7 @@ def init_db():
             username TEXT UNIQUE NOT NULL,
             email TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
-            amor_proprio INTEGER DEFAULT 50,
+            amor_proprio INTEGER DEFAULT 100,
             lagrimas INTEGER DEFAULT 50,
             created_at TEXT DEFAULT (datetime('now'))
         );
@@ -143,8 +143,8 @@ def register():
 
             hashed = hash_password(password)
             c = conn.execute(
-                'INSERT INTO user (username, email, password) VALUES (?, ?, ?)',
-                (username, email, hashed)
+                'INSERT INTO user (username, email, password, amor_proprio, lagrimas) VALUES (?, ?, ?, ?, ?)',
+                (username, email, hashed, 100, 50)
             )
             user_id = c.lastrowid
 
