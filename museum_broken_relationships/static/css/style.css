@@ -575,6 +575,13 @@ body.dark-mode .modal {
     margin-bottom: 8px;
 }
 
+.slot-icone-img {
+    width: 58px;
+    height: 58px;
+    object-fit: contain;
+    margin: 0 auto 8px;
+}
+
 .slot-vazio p {
     font-weight: 700;
     font-size: 1rem;

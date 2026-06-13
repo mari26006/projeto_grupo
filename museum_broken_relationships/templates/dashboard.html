@@ -37,7 +37,7 @@
 
                     {% if slot.estado == 'vazio' %}
                     <div class="slot-vazio">
-                        <div class="slot-icone">➕</div>
+                        <img class="slot-icone slot-icone-img" src="{{ url_for('static', filename='img/pixel_heart.png') }}" alt="" aria-hidden="true">
                         <p>Slot {{ slot.numero }}</p>
                         <p class="slot-sub">Clica para construir</p>
                         <button type="button" class="btn btn-slot" data-action="abrirMenuConstruir" data-slot="{{ slot.numero }}" aria-label="Construir slot {{ slot.numero }}">Explorar espaço de cura</button>
