@@ -12,7 +12,7 @@
                     <strong id="amor-valor">{{ user.amor_proprio }}</strong>/100
                 </div>
                 <div class="barra-progresso amor-bar">
-                    <div class="barra-fill amor-fill" id="amor-progresso" style="width: {{ user.amor_proprio }}%"></div>
+                    <div class="barra-fill" id="amor-progresso" style="width: {{ user.amor_proprio }}%"></div>
                 </div>
                 <div class="estado-emocional" id="estado-emocional">{{ user_estado }}</div>
             </div>
@@ -20,7 +20,7 @@
         </div>
         <div class="nav-user">
             <span>{{ user.username }}</span>
-            <a href="/logout" class="btn-logout">Sair</a>
+            <a href="/logout" class="btn-logout">Logout</a>
         </div>
     </nav>
 </header>
@@ -29,28 +29,18 @@
     <section class="secao-principal" aria-labelledby="secao-titulo">
         <article>
             <h2 id="secao-titulo" class="secao-titulo">O teu Espaço de Cura</h2>
-            <p class="secao-desc">Explora cada espaço com decisões que aumentam o teu Amor-Próprio.</p>
+            <p class="secao-desc">Constrói os teus espaços para processar o fim da relação</p>
 
             <div class="slots-grid" role="list">
                 {% for slot in slots %}
-                <div class="slot" id="slot-{{ slot.numero }}" role="listitem"
-                     data-numero="{{ slot.numero }}"
-                     data-estado="{{ slot.estado }}"
-                     data-tipo="{{ slot.tipo or '' }}">
+                <div class="slot" id="slot-{{ slot.numero }}" role="listitem" data-numero="{{ slot.numero }}" data-estado="{{ slot.estado }}" data-tipo="{{ slot.tipo or '' }}">
 
                     {% if slot.estado == 'vazio' %}
                     <div class="slot-vazio">
-                        <img class="slot-icone slot-icone-img"
-                             src="{{ url_for('static', filename='img/pixel_heart.png') }}"
-                             alt="" aria-hidden="true">
-                        <p>Espaço {{ slot.numero }}</p>
-                        <p class="slot-sub">Ainda por explorar</p>
-                        <button type="button" class="btn btn-slot"
-                                data-action="abrirMenuConstruir"
-                                data-slot="{{ slot.numero }}"
-                                aria-label="Explorar espaço {{ slot.numero }}">
-                            + Iniciar Espaço
-                        </button>
+                        <img class="slot-icone slot-icone-img" src="{{ url_for('static', filename='img/pixel_heart.png') }}" alt="" aria-hidden="true">
+                        <p>Slot {{ slot.numero }}</p>
+                        <p class="slot-sub">Clica para construir</p>
+                        <button type="button" class="btn btn-slot" data-action="abrirMenuConstruir" data-slot="{{ slot.numero }}" aria-label="Construir slot {{ slot.numero }}">Explorar espaço de cura</button>
                     </div>
 
                     {% elif slot.estado == 'construindo' %}
@@ -58,7 +48,7 @@
                     <div class="slot-construindo">
                         <div class="slot-icone">🔨</div>
                         <p>{{ tipo_info.nome }}</p>
-                        <p class="slot-sub">A preparar o espaço...</p>
+                        <p class="slot-sub">Em construção...</p>
                         <div class="barra-progresso">
                             <div class="barra-fill" id="barra-{{ slot.numero }}" style="width:0%"></div>
                         </div>
@@ -71,13 +61,7 @@
                         <div class="slot-icone">{{ tipo_info.emoji }}</div>
                         <p>{{ tipo_info.nome }}</p>
                         <p class="slot-sub estado-ativo">✅ Pronto para tarefas!</p>
-                        <button type="button" class="btn btn-slot btn-acao"
-                                data-action="abrirMenuTarefas"
-                                data-slot="{{ slot.numero }}"
-                                data-tipo="{{ slot.tipo }}"
-                                aria-label="Dar ordem no slot {{ slot.numero }}">
-                            Dar Ordem
-                        </button>
+                        <button type="button" class="btn btn-slot btn-acao" data-action="abrirMenuTarefas" data-slot="{{ slot.numero }}" data-tipo="{{ slot.tipo }}" aria-label="Dar ordem no slot {{ slot.numero }}">Dar Ordem</button>
                     </div>
 
                     {% elif slot.estado == 'processando' %}
@@ -98,12 +82,7 @@
                         <div class="slot-icone">🎉</div>
                         <p>{{ tipo_info.nome }}</p>
                         <p class="slot-sub estado-concluida">{{ slot.tarefa_nome }}</p>
-                        <button type="button" class="btn btn-slot btn-recolher"
-                                data-action="recolher"
-                                data-slot="{{ slot.numero }}"
-                                aria-label="Seguir em frente slot {{ slot.numero }}">
-                            Seguir em Frente ✨
-                        </button>
+                        <button type="button" class="btn btn-slot btn-recolher" data-action="recolher" data-slot="{{ slot.numero }}" aria-label="Seguir em frente slot {{ slot.numero }}">Seguir em Frente ✨</button>
                     </div>
                     {% endif %}
 
@@ -114,18 +93,11 @@
     </section>
 
     <aside class="painel-lateral" aria-labelledby="painel-titulo">
-
-        <!-- Leaderboard -->
         <div class="painel-secao">
             <h3 id="painel-titulo">🏆 Top Amor-Próprio</h3>
             <table class="leaderboard">
                 <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Nome</th>
-                        <th>Amor-Próprio</th>
-                        <th>Estado</th>
-                    </tr>
+                    <tr><th>#</th><th>Nome</th><th>Amor-Próprio</th><th>Estado</th></tr>
                 </thead>
                 <tbody>
                     {% for u in top_users %}
@@ -137,32 +109,23 @@
                             {% else %}{{ loop.index }}
                             {% endif %}
                         </td>
-                        <td>
-                            {% if u.id == user.id %}<strong>{{ u.username }}</strong>
-                            {% else %}{{ u.username }}
-                            {% endif %}
-                        </td>
-                        <td><strong>{{ u.amor_proprio }}</strong></td>
-                        <td><span class="estado-badge">{{ u.estado }}</span></td>
+                        <td>{{ u.username }}</td>
+                        <td>{{ u.amor_proprio }}</td>
+                        <td>{{ u.estado }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-
-        <!-- Modo escuro -->
-        <button id="theme-toggle" class="btn" type="button" aria-label="Alternar modo escuro">
-            Modo escuro
-        </button>
-
+        <button id="theme-toggle" class="btn theme-toggle-inline" type="button" aria-label="Alternar modo escuro">Modo escuro</button>
     </aside>
 </div>
 
 <!-- MODAL: CONSTRUIR -->
-<div class="modal-overlay" id="modal-construir" style="display:none" role="dialog" aria-modal="true">
+<div class="modal-overlay" id="modal-construir" style="display:none">
     <div class="modal">
         <h3>🏗️ Escolhe o que construir</h3>
-        <p id="modal-construir-slot-info" style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:16px;"></p>
+        <p id="modal-construir-slot-info"></p>
         <div class="opcoes-construir">
             <div class="opcao-construir" data-action="construir" data-tipo="bau">
                 <span class="opcao-emoji">📦</span>
@@ -188,19 +151,16 @@
 </div>
 
 <!-- MODAL: TAREFAS -->
-<div class="modal-overlay" id="modal-tarefas" style="display:none" role="dialog" aria-modal="true">
+<div class="modal-overlay" id="modal-tarefas" style="display:none">
     <div class="modal">
         <h3>📋 Escolhe uma tarefa</h3>
-        <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:14px;">
-            ⚠️ O resultado de cada escolha é desconhecido. Segue o teu instinto.
-        </p>
         <div class="opcoes-tarefas" id="opcoes-tarefas-lista"></div>
         <button type="button" class="btn btn-cancelar" data-action="fecharModal">Cancelar</button>
     </div>
 </div>
 
-<!-- NOTIFICAÇÃO -->
-<div class="notificacao" id="notificacao" style="display:none" role="alert"></div>
+<!-- MODAL: NOTIFICAÇÃO -->
+<div class="notificacao" id="notificacao" style="display:none"></div>
 
 {% endblock %}
 
