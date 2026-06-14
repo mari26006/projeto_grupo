@@ -150,7 +150,7 @@ CONSTRUCOES = {
         'ganhos': '+5 a +10 Amor-Próprio',
         'custo': 50,
         'tempo': 3,
-        'emoji': '📦'
+        'imagem': 'img/bau.png'
     },
     'arquivo': {
         'nome': 'Arquivo Digital',
@@ -159,7 +159,7 @@ CONSTRUCOES = {
         'ganhos': '+8 a +12 Amor-Próprio',
         'custo': 150,
         'tempo': 3,
-        'emoji': '💻'
+        'imagem': 'img/arquivodigital.png'
     },
     'mente': {
         'nome': 'A Mente e os Pensamentos',
@@ -168,7 +168,7 @@ CONSTRUCOES = {
         'ganhos': '+10 a +15 Amor-Próprio',
         'custo': 300,
         'tempo': 3,
-        'emoji': '🧠'
+        'imagem': 'img/mentepensamentos.png'
     },
     'novos': {
         'nome': 'Novos Começos',
@@ -177,7 +177,7 @@ CONSTRUCOES = {
         'ganhos': '+12 a +18 Amor-Próprio',
         'custo': 200,
         'tempo': 3,
-        'emoji': '🌱'
+        'imagem': 'img/novoscomecos.png'
     }
 }
 

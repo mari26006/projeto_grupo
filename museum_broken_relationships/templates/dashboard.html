@@ -37,7 +37,7 @@
                     {% if slot.estado == 'vazio' %}
                     {% set tipo_info = construcoes[slot.tipo] %}
                     <div class="slot-vazio">
-                        <div class="slot-icone">{{ tipo_info.emoji }}</div>
+                        <img class="slot-icone-img" src="{{ url_for('static', filename=tipo_info.imagem) }}" alt="{{ tipo_info.nome }}">
                         <p>{{ tipo_info.nome }}</p>
                         <p class="slot-sub">{{ tipo_info.descricao }}</p>
                         <button type="button" class="btn btn-slot" data-action="construir" data-slot="{{ slot.numero }}" data-tipo="{{ slot.tipo }}" aria-label="Construir slot {{ slot.numero }}">Explorar espaço de cura</button>
@@ -59,7 +59,7 @@
                     {% set tipo_info = construcoes[slot.tipo] %}
                     {% set total_momentos = tarefas_base[slot.tipo] | length %}
                     <div class="slot-ativo">
-                        <div class="slot-icone">{{ tipo_info.emoji }}</div>
+                        <img class="slot-icone-img" src="{{ url_for('static', filename=tipo_info.imagem) }}" alt="{{ tipo_info.nome }}">
                         <p>{{ tipo_info.nome }}</p>
                         <p class="slot-meta">Momento {{ slot.etapa or 1 }} de {{ total_momentos }}</p>
                         <p class="slot-sub estado-ativo">✅ Pronto para tarefas!</p>

@@ -630,10 +630,11 @@ body.dark-mode .modal {
 }
 
 .slot-icone-img {
-    width: 58px;
+    width: 76px;
     height: 58px;
     object-fit: contain;
-    margin: 0 auto 8px;
+    margin: 0 auto 5px;
+    display: block;
 }
 
 .slot-vazio p {
