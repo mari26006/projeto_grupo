@@ -6,6 +6,8 @@ let currentSlot = null;
 let TAREFAS_DATA = {};
 let TEMPO_NOTIFICACAO_MS = 15000;
 let TEMPO_RECARREGAR_APOS_MENSAGEM_MS = 7000;
+let TEMPO_RECARREGAR_APOS_RECOLHA_MS = 900;
+let popupCuraMostrado = false;
 
 // Tempos de ativação em segundos (têm de coincidir com o backend)
 let TEMPOS_ESPACO = {
@@ -90,6 +92,8 @@ document.addEventListener('click', function(e) {
         recolher(slot);
     } else if (action === 'fecharModal') {
         fecharModal();
+    } else if (action === 'fecharPopupCura') {
+        fecharPopupCura();
     } else if (action === 'darOrdem' && slot && tarefaId) {
         let opcaoId = el.dataset.opcaoId || el.getAttribute('data-opcao-id');
         darOrdem(slot, tarefaId, opcaoId);
@@ -102,6 +106,25 @@ function fecharModal() {
         tarefasModal.style.display = 'none';
     }
     currentSlot = null;
+}
+
+function mostrarPopupCura(deveMostrar) {
+    let popup = document.getElementById('popup-cura');
+
+    if (popup && deveMostrar && !popupCuraMostrado) {
+        popupCuraMostrado = true;
+        popup.style.display = 'flex';
+    }
+}
+
+function fecharPopupCura() {
+    let popup = document.getElementById('popup-cura');
+
+    if (popup) {
+        popup.style.display = 'none';
+    }
+
+    location.reload();
 }
 
 // Fechar modal ao clicar fora
@@ -185,6 +208,7 @@ function darOrdem(numSlot, tarefaId, opcaoId) {
             mostrarNotificacao('❌ ' + data.erro);
         } else {
             atualizarRecursos(data.amor_proprio, data.estado_emocional);
+            mostrarPopupCura(data.mostrar_popup_cura);
             let deltaMessage = '💔 Amor-Próprio ' + data.delta;
             if (data.delta && data.delta.startsWith('+')) {
                 deltaMessage = '❤️ Amor-Próprio ' + data.delta;
@@ -206,6 +230,13 @@ function darOrdem(numSlot, tarefaId, opcaoId) {
 // ---- RECOLHER ----
 
 function recolher(numSlot) {
+    let botao = document.querySelector('[data-action="recolher"][data-slot="' + numSlot + '"]');
+
+    if (botao) {
+        botao.disabled = true;
+        botao.textContent = 'A avançar...';
+    }
+
     fetch('/api/recolher', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -214,26 +245,40 @@ function recolher(numSlot) {
     .then(function(res) { return res.json(); })
     .then(function(data) {
         if (data.sem_recolha) {
+            mostrarNotificacao('A tarefa ainda está a terminar. Tenta novamente.');
+            restaurarBotaoRecolher(botao);
             return;
         }
         if (data.erro) {
             mostrarNotificacao('❌ ' + data.erro);
+            restaurarBotaoRecolher(botao);
         } else {
             let estadoEl = document.getElementById('estado-emocional');
             let oldEstado = estadoEl ? estadoEl.textContent : '';
             atualizarRecursos(data.amor_proprio, data.estado_emocional);
+            mostrarPopupCura(data.mostrar_popup_cura);
             mostrarNotificacao(data.mensagem || '🎉 Tarefa concluída!');
             if (data.estado_emocional && oldEstado && data.estado_emocional !== oldEstado) {
                 setTimeout(function() {
                     mostrarNotificacao('🎉 Novo Estado Desbloqueado! ' + oldEstado + ' → ' + data.estado_emocional);
                 }, 1200);
             }
-            setTimeout(function() { location.reload(); }, TEMPO_RECARREGAR_APOS_MENSAGEM_MS);
+            if (!data.mostrar_popup_cura) {
+                setTimeout(function() { location.reload(); }, TEMPO_RECARREGAR_APOS_RECOLHA_MS);
+            }
         }
     })
     .catch(function(err) {
         mostrarNotificacao('❌ Erro de ligação ao servidor.');
+        restaurarBotaoRecolher(botao);
     });
+}
+
+function restaurarBotaoRecolher(botao) {
+    if (botao) {
+        botao.disabled = false;
+        botao.textContent = 'Tentar seguir em Frente ✨';
+    }
 }
 
 // ---- CONTADORES / BARRAS DE PROGRESSO ----

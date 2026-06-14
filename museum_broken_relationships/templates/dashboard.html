@@ -89,7 +89,7 @@
                     {% elif slot.estado == 'finalizado' %}
                     {% set tipo_info = construcoes[slot.tipo] %}
                     <div class="slot-finalizado">
-                        <div class="slot-icone">🏁</div>
+                        <img class="slot-finalizado-coracao" src="{{ url_for('static', filename='img/pixel_heart.png') }}" alt="Coração">
                         <p>{{ tipo_info.nome }}</p>
                         <p class="slot-sub estado-ativo">Espaço concluído</p>
                         <p class="slot-sub">Completaste todos os momentos deste espaço.</p>
@@ -142,6 +142,21 @@
 
 <!-- MODAL: NOTIFICAÇÃO -->
 <div class="notificacao" id="notificacao" style="display:none"></div>
+
+<!-- MODAL: 100 AMOR-PRÓPRIO -->
+<div class="popup-cura-overlay" id="popup-cura" style="display:none">
+    <div class="popup-cura" role="dialog" aria-modal="true" aria-labelledby="popup-cura-titulo">
+        <div class="popup-cura-topo">
+            <span id="popup-cura-titulo">reminder</span>
+            <button type="button" class="popup-cura-fechar" data-action="fecharPopupCura" aria-label="Fechar">×</button>
+        </div>
+        <div class="popup-cura-conteudo">
+            <p>Parabéns! fizeste um ótimo<br>trabalho para ultrapassares<br>essa dor!</p>
+            <p>Lembra-te, o melhor<br>amor...é o amor próprio!</p>
+            <button type="button" class="popup-cura-ok" data-action="fecharPopupCura">OK</button>
+        </div>
+    </div>
+</div>
 
 {% endblock %}
 

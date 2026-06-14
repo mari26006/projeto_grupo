@@ -351,7 +351,7 @@ PUBLICACOES_TAREFA = {
     'situacao': 'Há uma atualização do/a ex no feed que pode chegar mais tarde.',
     'tempo': 3,
     'opcoes': [
-        {'id': 'A', 'label': 'Manter distância e não ver', 'amor_delta': 0, 'correta': True, 'mensagem': 'Optaste por não ver. Protegeste a tua paz e o teu progresso.'},
+        {'id': 'A', 'label': 'Manter distância e não ver', 'amor_delta': 8, 'correta': True, 'mensagem': 'Optaste por não ver. Protegeste a tua paz e o teu progresso.'},
         {'id': 'B', 'label': 'Ver por curiosidade', 'amor_delta': -10, 'correta': False, 'mensagem': 'Abriste o feed e sentiste as emoções do passado.'}
     ]
 }
@@ -484,13 +484,13 @@ def dashboard():
         if session.get('silenciou_ex'):
             publicacoes['situacao'] = 'Não viste as novas publicações do/a ex. Mantens a tua paz.'
             publicacoes['opcoes'] = [
-                {'id': 'A', 'label': 'Continuar a afastar-te', 'amor_delta': 0, 'correta': True, 'mensagem': 'Decidiste não ver. Isso fortalece a tua recuperação.'},
+                {'id': 'A', 'label': 'Continuar a afastar-te', 'amor_delta': 8, 'correta': True, 'mensagem': 'Decidiste não ver. Isso fortalece a tua recuperação.'},
                 {'id': 'B', 'label': 'Ceder e ver por curiosidade', 'amor_delta': -5, 'correta': False, 'mensagem': 'Ceder à curiosidade trouxe alguma dor, mas já aprendeste algo.'}
             ]
         else:
             publicacoes['situacao'] = 'Vistes uma atualização do/a ex no feed hoje.'
             publicacoes['opcoes'] = [
-                {'id': 'A', 'label': 'Ignorar e manter a distância', 'amor_delta': 0, 'correta': True, 'mensagem': 'Ignoraste-o/a. Estás a proteger a tua paz.'},
+                {'id': 'A', 'label': 'Ignorar e manter a distância', 'amor_delta': 8, 'correta': True, 'mensagem': 'Ignoraste-o/a. Estás a proteger a tua paz.'},
                 {'id': 'B', 'label': 'Ver e enfrentar o desconforto', 'amor_delta': -10, 'correta': False, 'mensagem': 'Viste as publicações e sentiste o peso do passado.'}
             ]
         tarefas_para_template['arquivo'].append(publicacoes)
@@ -609,12 +609,12 @@ def dar_ordem():
         publicacoes = copy.deepcopy(PUBLICACOES_TAREFA)
         if session.get('silenciou_ex'):
             publicacoes['opcoes'] = [
-                {'id': 'A', 'label': 'Continuar a afastar-te', 'amor_delta': 0, 'correta': True, 'mensagem': 'Decidiste não ver. Isso fortalece a tua recuperação.'},
+                {'id': 'A', 'label': 'Continuar a afastar-te', 'amor_delta': 8, 'correta': True, 'mensagem': 'Decidiste não ver. Isso fortalece a tua recuperação.'},
                 {'id': 'B', 'label': 'Ceder e ver por curiosidade', 'amor_delta': -5, 'correta': False, 'mensagem': 'Ceder à curiosidade trouxe alguma dor, mas já aprendeste algo.'}
             ]
         else:
             publicacoes['opcoes'] = [
-                {'id': 'A', 'label': 'Ignorar e manter a distância', 'amor_delta': 0, 'correta': True, 'mensagem': 'Ignoraste-o/a. Estás a proteger a tua paz.'},
+                {'id': 'A', 'label': 'Ignorar e manter a distância', 'amor_delta': 8, 'correta': True, 'mensagem': 'Ignoraste-o/a. Estás a proteger a tua paz.'},
                 {'id': 'B', 'label': 'Ver e enfrentar o desconforto', 'amor_delta': -10, 'correta': False, 'mensagem': 'Viste as publicações e sentiste o peso do passado.'}
             ]
         tarefas_tipo.append(publicacoes)
@@ -647,14 +647,18 @@ def dar_ordem():
         conn.close()
         return jsonify({'erro': 'Ficaste desolado/a. Reinicia o progresso para voltar a tentar.'}), 400
 
-    novo_amor = calcular_amor_proprio(conn, user['id'], amor_atual, opcao['amor_delta'])
+    resposta_correta = opcao.get('correta', opcao['amor_delta'] > 0)
+    amor_delta = opcao['amor_delta']
+    if resposta_correta and amor_delta <= 0:
+        amor_delta = 8
+
+    novo_amor = calcular_amor_proprio(conn, user['id'], amor_atual, amor_delta)
     fim = (datetime.utcnow() + timedelta(seconds=tarefa['tempo'])).strftime('%Y-%m-%d %H:%M:%S')
 
     if tarefa_id == 'redes':
         session['publicacoes_disponivel'] = True
         session['silenciou_ex'] = (opcao_id == 'B')
 
-    resposta_correta = opcao.get('correta', opcao['amor_delta'] > 0)
     conn.execute('UPDATE user SET amor_proprio = ? WHERE id = ?',
                  (novo_amor, user['id']))
     conn.execute('UPDATE slot SET estado = ?, tarefa_nome = ?, tarefa_fim = ?, tarefa_correta = ? WHERE id = ?',
@@ -662,7 +666,7 @@ def dar_ordem():
     conn.commit()
     conn.close()
 
-    delta_text = f"{opcao['amor_delta']:+d}"
+    delta_text = f"{amor_delta:+d}"
     return jsonify({
         'sucesso': True,
         'amor_proprio': novo_amor,
@@ -686,6 +690,14 @@ def recolher():
     slot = conn.execute('SELECT * FROM slot WHERE user_id = ? AND numero = ?',
                         (user['id'], slot_num)).fetchone()
 
+    # Permite recolher logo após o contador terminar.
+    if slot and slot['estado'] == 'processando' and slot['tarefa_fim']:
+        fim = str_to_dt(slot['tarefa_fim'])
+        if datetime.utcnow() >= fim:
+            conn.execute('UPDATE slot SET estado = ? WHERE id = ?', ('concluida', slot['id']))
+            conn.commit()
+            slot = conn.execute('SELECT * FROM slot WHERE id = ?', (slot['id'],)).fetchone()
+
     if not slot or slot['estado'] != 'concluida':
         conn.close()
         return jsonify({'sem_recolha': True})
@@ -700,6 +712,7 @@ def recolher():
     total_momentos = len(tarefas_tipo)
     proxima_etapa = (slot['etapa'] or 1) + 1
     resposta_correta = slot['tarefa_correta'] == 1
+    mostrar_popup_cura = False
 
     if resposta_correta:
         if slot['tarefa_nome'] and slot['tarefa_nome'].startswith('Novas publicações'):
@@ -710,6 +723,7 @@ def recolher():
                          ('finalizado', slot['id']))
             if todos_slots_finalizados(conn, user['id']):
                 amor_resposta = 100
+                mostrar_popup_cura = True
                 conn.execute('UPDATE user SET amor_proprio = ? WHERE id = ?', (amor_resposta, user['id']))
                 mensagem = 'Parabéns! Respondeste corretamente a todos os momentos de todos os espaços.'
             else:
@@ -730,7 +744,8 @@ def recolher():
         'sucesso': True,
         'amor_proprio': amor_resposta,
         'mensagem': mensagem,
-        'estado_emocional': get_estado_emocional(amor_resposta)
+        'estado_emocional': get_estado_emocional(amor_resposta),
+        'mostrar_popup_cura': mostrar_popup_cura
     })
 
 @app.route('/reiniciar')
