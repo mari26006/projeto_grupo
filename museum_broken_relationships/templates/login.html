@@ -3,7 +3,7 @@
 <div class="auth-page">
     <div class="auth-card">
         <div class="auth-header">
-            <a href="/" class="voltar">← Voltar</a>
+            <a href="{{ url_for('index') }}" class="voltar">← Voltar</a>
             <h2>💔 Regresso ao Museu</h2>
             <p>O teu processo de superação continua aqui</p>
         </div>
@@ -12,18 +12,18 @@
         <div class="alerta erro">{{ erro }}</div>
         {% endif %}
 
-        <form method="POST" action="/login">
+        <form method="POST" action="{{ url_for('login') }}">
             <div class="campo">
-                <label>Username</label>
-                <input type="text" name="username" placeholder="O teu nome de guerra" required>
+                <label for="username">Username</label>
+                <input id="username" type="text" name="username" value="{{ values.get('username', '') if values else '' }}" placeholder="O teu nome de guerra" required>
             </div>
             <div class="campo">
-                <label>Password</label>
-                <input type="password" name="password" placeholder="A tua password" required>
+                <label for="password">Password</label>
+                <input id="password" type="password" name="password" placeholder="A tua password" required>
             </div>
             <button type="submit" class="btn btn-principal btn-full">Entrar no Museu</button>
         </form>
-        <p class="auth-link">Ainda não tens conta? <a href="/register">Regista-te</a></p>
+        <p class="auth-link">Ainda não tens conta? <a href="{{ url_for('register') }}">Regista-te</a></p>
     </div>
 </div>
 {% endblock %}

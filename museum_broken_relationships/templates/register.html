@@ -3,7 +3,7 @@
 <div class="auth-page">
     <div class="auth-card">
         <div class="auth-header">
-            <a href="/" class="voltar">← Voltar</a>
+            <a href="{{ url_for('index') }}" class="voltar">← Voltar</a>
             <h2>💔 Contrato de Compromisso</h2>
             <p>com o Amor-Próprio</p>
         </div>
@@ -12,25 +12,25 @@
         <div class="alerta erro">{{ erro }}</div>
         {% endif %}
 
-        <form method="POST" action="/register">
+        <form method="POST" action="{{ url_for('register') }}">
             <div class="campo">
-                <label>O teu nome de guerra</label>
-                <input type="text" name="username" placeholder="ex: Afonso20" required maxlength="80">
+                <label for="username">O teu nome de guerra</label>
+                <input id="username" type="text" name="username" value="{{ values.get('username', '') if values else '' }}" placeholder="ex: Afonso20" required maxlength="80">
             </div>
             <div class="campo">
-                <label>Email</label>
-                <input type="email" name="email" placeholder="o-teu@email.com" required maxlength="120">
+                <label for="email">Email</label>
+                <input id="email" type="email" name="email" value="{{ values.get('email', '') if values else '' }}" placeholder="o-teu@email.com" required maxlength="120">
             </div>
             <div class="campo">
-                <label>Password</label>
-                <input type="password" name="password" placeholder="Cria uma password forte" required minlength="6">
+                <label for="password">Password</label>
+                <input id="password" type="password" name="password" placeholder="Cria uma password forte" required minlength="6">
             </div>
             <div class="recursos-iniciais">
                 <span>❤️ Começas com: <strong>4 Amor-Próprio</strong></span>
             </div>
             <button type="submit" class="btn btn-principal btn-full">Assinar o Contrato</button>
         </form>
-        <p class="auth-link">Já tens conta? <a href="/login">Faz Login</a></p>
+        <p class="auth-link">Já tens conta? <a href="{{ url_for('login') }}">Faz Login</a></p>
     </div>
 </div>
 {% endblock %}

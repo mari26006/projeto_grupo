@@ -1,9 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 import sqlite3
-import hashlib
 import os
 import copy
 from datetime import datetime, timedelta
+from passlib.hash import pbkdf2_sha256 as hasher
+from passlib.hash import hex_sha256
 
 app = Flask(__name__)
 app.secret_key = 'daw2026secretkey'
@@ -62,10 +63,59 @@ def init_db():
     conn.close()
 
 def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
+    return hasher.hash(password)
 
 def check_password(password, hashed):
-    return hash_password(password) == hashed
+    if len(hashed) == 64:
+        return hex_sha256.verify(password, hashed)
+    return hasher.verify(password, hashed)
+
+def password_uses_old_hash(hashed):
+    return len(hashed) == 64
+
+def validate_register_form(form):
+    data = {}
+    errors = []
+
+    username = form.get('username', '').strip()
+    email = form.get('email', '').strip()
+    password = form.get('password', '')
+
+    if len(username) == 0:
+        errors.append('O username não pode estar vazio.')
+    else:
+        data['username'] = username
+
+    if len(email) == 0:
+        errors.append('O email não pode estar vazio.')
+    else:
+        data['email'] = email
+
+    if len(password) < 6:
+        errors.append('A password precisa de pelo menos 6 caracteres.')
+    else:
+        data['password'] = password
+
+    return data, errors
+
+def validate_login_form(form):
+    data = {}
+    errors = []
+
+    username = form.get('username', '').strip()
+    password = form.get('password', '')
+
+    if len(username) == 0:
+        errors.append('O username não pode estar vazio.')
+    else:
+        data['username'] = username
+
+    if len(password) == 0:
+        errors.append('A password não pode estar vazia.')
+    else:
+        data['password'] = password
+
+    return data, errors
 
 def now_str():
     return datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
@@ -319,26 +369,27 @@ def index():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        email = request.form.get('email', '').strip()
-        password = request.form.get('password', '').strip()
-
-        if not username or not email or not password:
-            return render_template('register.html', erro='Preenche todos os campos!')
-
-        if len(password) < 6:
-            return render_template('register.html', erro='A password precisa de pelo menos 6 caracteres!')
+        data, errors = validate_register_form(request.form)
+        if len(errors) > 0:
+            return render_template('register.html', erro=errors[0], values=request.form)
 
         conn = get_db()
         try:
-            existing = conn.execute('SELECT id FROM user WHERE username = ? OR email = ?', (username, email)).fetchone()
+            existing = conn.execute(
+                'SELECT id FROM user WHERE username = ? OR email = ?',
+                (data['username'], data['email'])
+            ).fetchone()
             if existing:
-                return render_template('register.html', erro='Username ou email já existe!')
+                return render_template(
+                    'register.html',
+                    erro='Username ou email já existe!',
+                    values=request.form
+                )
 
-            hashed = hash_password(password)
+            hashed = hash_password(data['password'])
             c = conn.execute(
                 'INSERT INTO user (username, email, password, amor_proprio) VALUES (?, ?, ?, ?)',
-                (username, email, hashed, AMOR_PROPRIO_INICIAL)
+                (data['username'], data['email'], hashed, AMOR_PROPRIO_INICIAL)
             )
             user_id = c.lastrowid
 
@@ -358,15 +409,33 @@ def register():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        password = request.form.get('password', '').strip()
+        data, errors = validate_login_form(request.form)
+        if len(errors) > 0:
+            return render_template('login.html', erro=errors[0], values=request.form)
 
         conn = get_db()
-        user = conn.execute('SELECT * FROM user WHERE username = ?', (username,)).fetchone()
+        user = conn.execute(
+            'SELECT * FROM user WHERE username = ?',
+            (data['username'],)
+        ).fetchone()
         conn.close()
 
-        if not user or not check_password(password, user['password']):
-            return render_template('login.html', erro='Username ou password incorretos!')
+        if not user or not check_password(data['password'], user['password']):
+            return render_template(
+                'login.html',
+                erro='Username ou password incorretos!',
+                values=request.form
+            )
+
+        # Atualiza hashes antigos depois de um login válido.
+        if password_uses_old_hash(user['password']):
+            conn = get_db()
+            conn.execute(
+                'UPDATE user SET password = ? WHERE id = ?',
+                (hash_password(data['password']), user['id'])
+            )
+            conn.commit()
+            conn.close()
 
         session['user_id'] = user['id']
         return redirect(url_for('dashboard'))
@@ -398,16 +467,15 @@ def dashboard():
     limitar_amor_antes_da_cura(conn, user['id'], user['amor_proprio'])
     user = conn.execute('SELECT * FROM user WHERE id = ?', (session['user_id'],)).fetchone()
     slots = conn.execute('SELECT * FROM slot WHERE user_id = ? ORDER BY numero', (user['id'],)).fetchall()
-    top_users = conn.execute('SELECT * FROM user ORDER BY amor_proprio DESC LIMIT 10').fetchall()
-    top_users = [
-        {
-            'id': u['id'],
-            'username': u['username'],
-            'amor_proprio': u['amor_proprio'],
-            'estado': get_estado_emocional(u['amor_proprio'])
-        }
-        for u in top_users
-    ]
+    top_users_data = conn.execute('SELECT * FROM user ORDER BY amor_proprio DESC LIMIT 10').fetchall()
+    top_users = []
+    for top_user in top_users_data:
+        top_users.append({
+            'id': top_user['id'],
+            'username': top_user['username'],
+            'amor_proprio': top_user['amor_proprio'],
+            'estado': get_estado_emocional(top_user['amor_proprio'])
+        })
     user_estado = get_estado_emocional(user['amor_proprio'])
 
     tarefas_para_template = copy.deepcopy(TAREFAS)

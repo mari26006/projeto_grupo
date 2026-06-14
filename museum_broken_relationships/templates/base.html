@@ -11,7 +11,7 @@
     {% block site_header %}
     <header>
         <div class="site-branding">
-            <a href="/" class="site-title">Museum of Broken Relationships</a>
+            <a href="{{ url_for('index') }}" class="site-title">Museum of Broken Relationships</a>
         </div>
     </header>
     {% endblock %}
@@ -24,35 +24,6 @@
     </footer>
 
     {% block scripts %}{% endblock %}
-    <script>
-        const themeToggle = document.getElementById('theme-toggle');
-        const storedTheme = localStorage.getItem('preferred-theme');
-        const body = document.body;
-
-        const applyTheme = (theme) => {
-            if (theme === 'dark') {
-                body.classList.add('dark-mode');
-                if (themeToggle) themeToggle.textContent = 'Modo claro';
-            } else {
-                body.classList.remove('dark-mode');
-                if (themeToggle) themeToggle.textContent = 'Modo escuro';
-            }
-        };
-
-        const getPreferredTheme = () => {
-            if (storedTheme) return storedTheme;
-            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        };
-
-        applyTheme(getPreferredTheme());
-
-        if (themeToggle) {
-            themeToggle.addEventListener('click', () => {
-                const nextTheme = body.classList.contains('dark-mode') ? 'light' : 'dark';
-                localStorage.setItem('preferred-theme', nextTheme);
-                applyTheme(nextTheme);
-            });
-        }
-    </script>
+    <script src="{{ url_for('static', filename='js/tema.js') }}"></script>
 </body>
 </html>

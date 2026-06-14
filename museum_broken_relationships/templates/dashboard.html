@@ -19,7 +19,7 @@
         </div>
         <div class="nav-user">
             <span>{{ user.username }}</span>
-            <a href="/logout" class="btn-logout">Logout</a>
+            <a href="{{ url_for('logout') }}" class="btn-logout">Logout</a>
         </div>
     </nav>
 </header>
