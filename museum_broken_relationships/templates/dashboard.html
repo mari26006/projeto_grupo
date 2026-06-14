@@ -16,7 +16,6 @@
                 </div>
                 <div class="estado-emocional" id="estado-emocional">{{ user_estado }}</div>
             </div>
-            <span class="recurso" id="recurso-lagrimas">💧 <strong id="lagrimas-valor">{{ user.lagrimas }}</strong> Lágrimas</span>
         </div>
         <div class="nav-user">
             <span>{{ user.username }}</span>
@@ -29,18 +28,19 @@
     <section class="secao-principal" aria-labelledby="secao-titulo">
         <article>
             <h2 id="secao-titulo" class="secao-titulo">O teu Espaço de Cura</h2>
-            <p class="secao-desc">Constrói os teus espaços para processar o fim da relação</p>
+            <p class="secao-desc">Enfrenta as recordações do passado e recupera o teu Amor-Próprio.</p>
 
             <div class="slots-grid" role="list">
                 {% for slot in slots %}
-                <div class="slot" id="slot-{{ slot.numero }}" role="listitem" data-numero="{{ slot.numero }}" data-estado="{{ slot.estado }}" data-tipo="{{ slot.tipo or '' }}">
+                <div class="slot" id="slot-{{ slot.numero }}" role="listitem" data-numero="{{ slot.numero }}" data-estado="{{ slot.estado }}" data-tipo="{{ slot.tipo or '' }}" data-etapa="{{ slot.etapa or 0 }}">
 
                     {% if slot.estado == 'vazio' %}
+                    {% set tipo_info = construcoes[slot.tipo] %}
                     <div class="slot-vazio">
-                        <img class="slot-icone slot-icone-img" src="{{ url_for('static', filename='img/pixel_heart.png') }}" alt="" aria-hidden="true">
-                        <p>Slot {{ slot.numero }}</p>
-                        <p class="slot-sub">Clica para construir</p>
-                        <button type="button" class="btn btn-slot" data-action="abrirMenuConstruir" data-slot="{{ slot.numero }}" aria-label="Construir slot {{ slot.numero }}">Explorar espaço de cura</button>
+                        <div class="slot-icone">{{ tipo_info.emoji }}</div>
+                        <p>{{ tipo_info.nome }}</p>
+                        <p class="slot-sub">{{ tipo_info.descricao }}</p>
+                        <button type="button" class="btn btn-slot" data-action="construir" data-slot="{{ slot.numero }}" data-tipo="{{ slot.tipo }}" aria-label="Construir slot {{ slot.numero }}">Explorar espaço de cura</button>
                     </div>
 
                     {% elif slot.estado == 'construindo' %}
@@ -57,11 +57,13 @@
 
                     {% elif slot.estado == 'ativo' %}
                     {% set tipo_info = construcoes[slot.tipo] %}
+                    {% set total_momentos = tarefas_base[slot.tipo] | length %}
                     <div class="slot-ativo">
                         <div class="slot-icone">{{ tipo_info.emoji }}</div>
                         <p>{{ tipo_info.nome }}</p>
+                        <p class="slot-meta">Momento {{ slot.etapa or 1 }} de {{ total_momentos }}</p>
                         <p class="slot-sub estado-ativo">✅ Pronto para tarefas!</p>
-                        <button type="button" class="btn btn-slot btn-acao" data-action="abrirMenuTarefas" data-slot="{{ slot.numero }}" data-tipo="{{ slot.tipo }}" aria-label="Dar ordem no slot {{ slot.numero }}">Dar Ordem</button>
+                        <button type="button" class="btn btn-slot btn-acao" data-action="abrirMenuTarefas" data-slot="{{ slot.numero }}" data-tipo="{{ slot.tipo }}" aria-label="Tomar Decisão ⭐ no slot {{ slot.numero }}">Tomar Decisão ⭐</button>
                     </div>
 
                     {% elif slot.estado == 'processando' %}
@@ -78,11 +80,19 @@
 
                     {% elif slot.estado == 'concluida' %}
                     {% set tipo_info = construcoes[slot.tipo] %}
-                    <div class="slot-concluida piscar">
+                    <div class="slot-concluida">
                         <div class="slot-icone">🎉</div>
                         <p>{{ tipo_info.nome }}</p>
                         <p class="slot-sub estado-concluida">{{ slot.tarefa_nome }}</p>
-                        <button type="button" class="btn btn-slot btn-recolher" data-action="recolher" data-slot="{{ slot.numero }}" aria-label="Seguir em frente slot {{ slot.numero }}">Seguir em Frente ✨</button>
+                        <button type="button" class="btn btn-slot btn-recolher" data-action="recolher" data-slot="{{ slot.numero }}" aria-label="Tentar seguir em Frente slot {{ slot.numero }}">Tentar seguir em Frente ✨</button>
+                    </div>
+                    {% elif slot.estado == 'finalizado' %}
+                    {% set tipo_info = construcoes[slot.tipo] %}
+                    <div class="slot-finalizado">
+                        <div class="slot-icone">🏁</div>
+                        <p>{{ tipo_info.nome }}</p>
+                        <p class="slot-sub estado-ativo">Espaço concluído</p>
+                        <p class="slot-sub">Completaste todos os momentos deste espaço.</p>
                     </div>
                     {% endif %}
 
@@ -119,35 +129,6 @@
         </div>
         <button id="theme-toggle" class="btn theme-toggle-inline" type="button" aria-label="Alternar modo escuro">Modo escuro</button>
     </aside>
-</div>
-
-<!-- MODAL: CONSTRUIR -->
-<div class="modal-overlay" id="modal-construir" style="display:none">
-    <div class="modal">
-        <h3>🏗️ Escolhe o que construir</h3>
-        <p id="modal-construir-slot-info"></p>
-        <div class="opcoes-construir">
-            <div class="opcao-construir" data-action="construir" data-tipo="bau">
-                <span class="opcao-emoji">📦</span>
-                <strong>Baú das Recordações Físicas</strong>
-                <span class="opcao-custo">🪙 50 Moedas</span>
-                <span class="opcao-tempo">⏱ 3s</span>
-            </div>
-            <div class="opcao-construir" data-action="construir" data-tipo="arquivo">
-                <span class="opcao-emoji">💻</span>
-                <strong>Arquivo Digital</strong>
-                <span class="opcao-custo">🪙 150 Moedas</span>
-                <span class="opcao-tempo">⏱ 3s</span>
-            </div>
-            <div class="opcao-construir" data-action="construir" data-tipo="mente">
-                <span class="opcao-emoji">🧠</span>
-                <strong>A Mente e os Pensamentos</strong>
-                <span class="opcao-custo">🪙 300 Moedas</span>
-                <span class="opcao-tempo">⏱ 3s</span>
-            </div>
-        </div>
-        <button type="button" class="btn btn-cancelar" data-action="fecharModal">Cancelar</button>
-    </div>
 </div>
 
 <!-- MODAL: TAREFAS -->

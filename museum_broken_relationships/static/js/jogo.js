@@ -1,86 +1,104 @@
 // =============================================
 // MUSEUM OF BROKEN RELATIONSHIPS - Jogo JS
-// =============================================s
+// =============================================
 
 let currentSlot = null;
 // placeholder for tarefas data; will be populated from template JSON
 var TAREFAS_DATA = {};
+const TEMPO_NOTIFICACAO_MS = 15000;
+const TEMPO_RECARREGAR_APOS_MENSAGEM_MS = 7000;
 
-// Tempos de construção em segundos (têm de coincidir com o backend)
-const TEMPOS_CONSTRUCAO = {
+// Tempos de ativação em segundos (têm de coincidir com o backend)
+const TEMPOS_ESPACO = {
     'bau': 3,
     'arquivo': 3,
-    'mente': 3
+    'mente': 3,
+    'novos': 3
 };
 
 // ---- MODAL ----
 
-function abrirMenuConstruir(numSlot) {
-    currentSlot = numSlot;
-    document.getElementById('modal-construir-slot-info').textContent = 'Slot ' + numSlot;
-    document.getElementById('modal-construir').style.display = 'flex';
-}
-
 function abrirMenuTarefas(numSlot, tipo) {
     currentSlot = numSlot;
-    const tarefas = TAREFAS_DATA[tipo] || [];
-    const container = document.getElementById('opcoes-tarefas-lista');
+    var slotEl = document.getElementById('slot-' + numSlot);
+    var etapa = 1;
+    if (slotEl && slotEl.dataset.etapa) {
+        etapa = parseInt(slotEl.dataset.etapa, 10);
+    }
+
+    var tarefas = TAREFAS_DATA[tipo] || [];
+    var tarefa = tarefas[etapa - 1] || tarefas[0];
+    var container = document.getElementById('opcoes-tarefas-lista');
     container.innerHTML = '';
 
-    tarefas.forEach(function(t) {
-        const tempoTexto = t.tempo < 60 ? t.tempo + 's' : Math.floor(t.tempo / 60) + ' min';
-        const hint = t.hint ? `<span class="opcao-hint">${t.hint}</span>` : '<span class="opcao-hint">Resultado incerto</span>';
-        const div = document.createElement('div');
-        div.className = 'opcao-tarefa';
-        div.innerHTML = `
-            <strong>${t.nome}</strong>
-            <span>💧 ${t.lagrimas} Lágrimas</span>
-            <span>⏱ ${tempoTexto}</span>
-            ${hint}
-        `;
-        // marcar para event delegation (substitui onclick inline)
-        div.setAttribute('data-action', 'darOrdem');
-        div.setAttribute('data-slot', numSlot);
-        div.setAttribute('data-tarefa-id', t.id);
-        container.appendChild(div);
-    });
+    if (!tarefa) {
+        container.innerHTML = '<div class="opcao-tarefa"><p>Não há momento disponível neste espaço.</p></div>';
+        document.getElementById('modal-tarefas').style.display = 'flex';
+        return;
+    }
 
+    var card = document.createElement('div');
+    card.className = 'opcao-tarefa';
+    card.innerHTML = `
+        <div class="situacao-tarefa">
+            <strong>${tarefa.nome}</strong>
+            <p class="modal-momento">Momento ${etapa}</p>
+            <p>${tarefa.situacao}</p>
+            <p class="modal-pergunta">O que pretendes fazer?</p>
+            <p class="texto-custo">⏱ ${tarefa.tempo}s</p>
+        </div>
+    `;
+
+    for (var i = 0; i < tarefa.opcoes.length; i++) {
+        var opcao = tarefa.opcoes[i];
+        var botao = document.createElement('button');
+        botao.type = 'button';
+        botao.className = 'btn btn-opcao';
+        botao.textContent = `${opcao.id}. ${opcao.label}`;
+        botao.setAttribute('data-action', 'darOrdem');
+        botao.setAttribute('data-slot', numSlot);
+        botao.setAttribute('data-tarefa-id', tarefa.id);
+        botao.setAttribute('data-opcao-id', opcao.id);
+        card.appendChild(botao);
+    }
+
+    container.appendChild(card);
     document.getElementById('modal-tarefas').style.display = 'flex';
 }
 
 // Event delegation: trata elementos com data-action
 document.addEventListener('click', function(e) {
-    let el = e.target;
-    while (el && el !== document) {
-        if (el.dataset && el.dataset.action) {
-            const action = el.dataset.action;
-            const slot = el.dataset.slot ? parseInt(el.dataset.slot) : null;
-            const tipo = el.dataset.tipo || null;
-            const tarefaId = el.getAttribute('data-tarefa-id');
-
-            if (action === 'abrirMenuConstruir' && slot) {
-                abrirMenuConstruir(slot);
-            } else if (action === 'abrirMenuTarefas' && slot && tipo) {
-                abrirMenuTarefas(slot, tipo);
-            } else if (action === 'construir' && tipo) {
-                construir(currentSlot, tipo);
-            } else if (action === 'recolher' && slot) {
-                recolher(slot);
-            } else if (action === 'fecharModal') {
-                fecharModal();
-            } else if (action === 'darOrdem' && slot && tarefaId) {
-                darOrdem(slot, tarefaId);
-            }
-
-            break;
-        }
+    var el = e.target;
+    while (el && el !== document && (!el.dataset || !el.dataset.action)) {
         el = el.parentNode;
+    }
+
+    if (!el) return;
+
+    var action = el.dataset.action;
+    var slot = el.dataset.slot ? parseInt(el.dataset.slot) : null;
+    var tipo = el.dataset.tipo || null;
+    var tarefaId = el.getAttribute('data-tarefa-id');
+
+    if (action === 'abrirMenuTarefas' && slot && tipo) {
+        abrirMenuTarefas(slot, tipo);
+    } else if (action === 'construir' && tipo) {
+        if (slot) {
+            construir(slot, tipo);
+        }
+    } else if (action === 'recolher' && slot) {
+        recolher(slot);
+    } else if (action === 'fecharModal') {
+        fecharModal();
+    } else if (action === 'darOrdem' && slot && tarefaId) {
+        var opcaoId = el.dataset.opcaoId || el.getAttribute('data-opcao-id');
+        darOrdem(slot, tarefaId, opcaoId);
     }
 });
 
 function fecharModal() {
-    document.getElementById('modal-construir').style.display = 'none';
-    document.getElementById('modal-tarefas').style.display = 'none';
+    var tarefasModal = document.getElementById('modal-tarefas');
+    if (tarefasModal) tarefasModal.style.display = 'none';
     currentSlot = null;
 }
 
@@ -94,31 +112,33 @@ document.addEventListener('click', function(e) {
 // ---- NOTIFICAÇÃO ----
 
 function mostrarNotificacao(msg) {
-    const el = document.getElementById('notificacao');
-    el.textContent = msg;
+    var el = document.getElementById('notificacao');
+    el.innerHTML = msg.replace(/\n/g, '<br>');
     el.style.display = 'block';
     setTimeout(function() {
         el.style.display = 'none';
-    }, 4000);
+    }, TEMPO_NOTIFICACAO_MS);
 }
 
 // ---- ATUALIZAR RECURSOS NA NAVBAR ----
 
-function atualizarRecursos(amor, lagrimas, estado) {
-    const elAmor = document.getElementById('amor-valor');
-    const elLag = document.getElementById('lagrimas-valor');
-    const elBar = document.getElementById('amor-progresso');
-    const elEstado = document.getElementById('estado-emocional');
+function atualizarRecursos(amor, estado) {
+    var elAmor = document.getElementById('amor-valor');
+    var elBar = document.getElementById('amor-progresso');
+    var elEstado = document.getElementById('estado-emocional');
     if (elAmor && amor !== null && amor !== undefined) elAmor.textContent = amor;
-    if (elLag && lagrimas !== null && lagrimas !== undefined) elLag.textContent = lagrimas;
     if (elBar && amor !== null && amor !== undefined) elBar.style.width = Math.max(0, Math.min(100, amor)) + '%';
     if (elEstado && estado) elEstado.textContent = estado;
 }
 
-// ---- CONSTRUIR ----
+// ---- INICIAR ESPAÇO ----
 
 function construir(numSlot, tipo) {
     fecharModal();
+    if (!numSlot) {
+        mostrarNotificacao('❌ Slot inválido para construir.');
+        return;
+    }
     fetch('/api/construir', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -129,8 +149,8 @@ function construir(numSlot, tipo) {
         if (data.erro) {
             mostrarNotificacao('❌ ' + data.erro);
         } else {
-            atualizarRecursos(data.amor_proprio, null, data.estado_emocional);
-            mostrarNotificacao('🔨 Construção iniciada! Aguarda a conclusão.');
+            atualizarRecursos(null, data.estado_emocional);
+            mostrarNotificacao('✨ A preparar o espaço...');
             setTimeout(function() { location.reload(); }, 500);
         }
     })
@@ -141,21 +161,31 @@ function construir(numSlot, tipo) {
 
 // ---- DAR ORDEM ----
 
-function darOrdem(numSlot, tarefaId) {
+function darOrdem(numSlot, tarefaId, opcaoId) {
     fecharModal();
+    var estadoEl = document.getElementById('estado-emocional');
+    var oldEstado = estadoEl ? estadoEl.textContent : '';
     fetch('/api/dar_ordem', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slot: numSlot, tarefa_id: tarefaId })
+        body: JSON.stringify({ slot: numSlot, tarefa_id: tarefaId, opcao_id: opcaoId })
     })
     .then(function(res) { return res.json(); })
     .then(function(data) {
         if (data.erro) {
             mostrarNotificacao('❌ ' + data.erro);
         } else {
-            atualizarRecursos(null, data.lagrimas);
-            mostrarNotificacao('⏳ Tarefa iniciada! Volta quando estiver pronta.');
-            setTimeout(function() { location.reload(); }, 500);
+            atualizarRecursos(data.amor_proprio, data.estado_emocional);
+            var deltaMessage = data.delta && data.delta.startsWith('+')
+                ? '❤️ Amor-Próprio ' + data.delta
+                : '💔 Amor-Próprio ' + data.delta;
+            mostrarNotificacao(deltaMessage + '<br>' + data.mensagem + '<br> Novo valor: ' + data.novo_valor + '/100');
+            if (data.estado_emocional && oldEstado && data.estado_emocional !== oldEstado) {
+                setTimeout(function() {
+                    mostrarNotificacao('🎉 Estado emocional mudou: ' + oldEstado + ' → ' + data.estado_emocional);
+                }, 1200);
+            }
+            setTimeout(function() { location.reload(); }, TEMPO_RECARREGAR_APOS_MENSAGEM_MS);
         }
     })
     .catch(function(err) {
@@ -173,18 +203,20 @@ function recolher(numSlot) {
     })
     .then(function(res) { return res.json(); })
     .then(function(data) {
+        if (data.sem_recolha) return;
         if (data.erro) {
             mostrarNotificacao('❌ ' + data.erro);
         } else {
-            const oldEstado = document.getElementById('estado-emocional')?.textContent;
-            atualizarRecursos(data.amor_proprio, data.lagrimas, data.estado_emocional);
+            var estadoEl = document.getElementById('estado-emocional');
+            var oldEstado = estadoEl ? estadoEl.textContent : '';
+            atualizarRecursos(data.amor_proprio, data.estado_emocional);
             mostrarNotificacao(data.mensagem || '🎉 Tarefa concluída!');
             if (data.estado_emocional && oldEstado && data.estado_emocional !== oldEstado) {
                 setTimeout(function() {
                     mostrarNotificacao('🎉 Novo Estado Desbloqueado! ' + oldEstado + ' → ' + data.estado_emocional);
                 }, 1200);
             }
-            setTimeout(function() { location.reload(); }, 1000);
+            setTimeout(function() { location.reload(); }, TEMPO_RECARREGAR_APOS_MENSAGEM_MS);
         }
     })
     .catch(function(err) {
@@ -193,17 +225,18 @@ function recolher(numSlot) {
 }
 
 // ---- CONTADORES / BARRAS DE PROGRESSO ----
-// Esta função gere as contagens decrescentes nos slots que estão a construir ou processando
+// Esta função gere as contagens decrescentes nos slots que estão a iniciar ou processando
 
 function iniciarContadores() {
-    const slots = document.querySelectorAll('.slot');
-    slots.forEach(function(slotEl) {
-        const estado = slotEl.dataset.estado;
-        const numSlot = parseInt(slotEl.dataset.numero);
+    var slots = document.querySelectorAll('.slot');
+    for (var i = 0; i < slots.length; i++) {
+        let slotEl = slots[i];
+        let estado = slotEl.dataset.estado;
+        let numSlot = parseInt(slotEl.dataset.numero);
 
         if (estado === 'construindo' || estado === 'processando') {
             // Pede ao servidor quantos segundos restam
-            const rota = estado === 'construindo' ? '/api/verificar_construcao' : '/api/verificar_tarefa';
+            let rota = estado === 'construindo' ? '/api/verificar_construcao' : '/api/verificar_tarefa';
             fetch(rota, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -217,24 +250,24 @@ function iniciarContadores() {
                     return;
                 }
 
-                let segundos = data.segundos_restantes || 0;
+                var segundos = data.segundos_restantes || 0;
 
                 // Calcula tempo total para a barra
-                let tipoSlot = slotEl.dataset.tipo;
-                let tempoTotal = 60;
-                if (estado === 'construindo' && TEMPOS_CONSTRUCAO[tipoSlot]) {
-                    tempoTotal = TEMPOS_CONSTRUCAO[tipoSlot];
+                var tipoSlot = slotEl.dataset.tipo;
+                var tempoTotal = 60;
+                if (estado === 'construindo' && TEMPOS_ESPACO[tipoSlot]) {
+                    tempoTotal = TEMPOS_ESPACO[tipoSlot];
                 } else {
                     // Para tarefas, estimamos o tempo total a partir dos dados JS
                     // (simplificado: usamos os segundos restantes como referência)
                     tempoTotal = segundos > 0 ? segundos * 1.1 : 60;
                 }
 
-                const contadorEl = document.getElementById('contador-' + numSlot);
-                const barraEl = document.getElementById('barra-' + numSlot);
+                var contadorEl = document.getElementById('contador-' + numSlot);
+                var barraEl = document.getElementById('barra-' + numSlot);
 
                 // Atualiza a cada segundo
-                const intervalo = setInterval(function() {
+                var intervalo = setInterval(function() {
                     if (segundos <= 0) {
                         clearInterval(intervalo);
                         if (contadorEl) contadorEl.textContent = 'Pronto! A recarregar...';
@@ -244,7 +277,7 @@ function iniciarContadores() {
                     }
 
                     segundos--;
-                    const progresso = Math.min(100, ((tempoTotal - segundos) / tempoTotal) * 100);
+                    var progresso = Math.min(100, ((tempoTotal - segundos) / tempoTotal) * 100);
                     if (barraEl) barraEl.style.width = progresso + '%';
                     if (contadorEl) contadorEl.textContent = formatarTempo(segundos);
                 }, 1000);
@@ -253,15 +286,15 @@ function iniciarContadores() {
                 // Se falhar, só não mostra o contador
             });
         }
-    });
+    }
 }
 
 function formatarTempo(segundos) {
     if (segundos < 60) {
         return segundos + 's';
     }
-    const min = Math.floor(segundos / 60);
-    const seg = segundos % 60;
+    var min = Math.floor(segundos / 60);
+    var seg = segundos % 60;
     return min + 'm ' + seg + 's';
 }
 
@@ -276,7 +309,7 @@ function pollingEstado() {
             if (data.erro) return;
 
             // Atualiza recursos
-            atualizarRecursos(data.amor_proprio, data.lagrimas, data.estado_emocional);
+            atualizarRecursos(data.amor_proprio, data.estado_emocional);
 
             // Verifica se algum slot mudou para 'concluida' e deve ser recarregado
             data.slots.forEach(function(s) {
