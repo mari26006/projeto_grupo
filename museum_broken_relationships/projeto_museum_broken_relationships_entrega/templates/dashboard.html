@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% block body_class %}dashboard-page{% endblock %}
+{% block content %}
+<header role="banner">
+    <nav class="navbar nav-inner" aria-label="Navegação principal">
+        <div class="nav-logo">💔 Broken Relationships</div>
+        <div class="nav-recursos">
+            <div class="amor-proprio-status">
+                <div class="amor-proprio-header">
+                    <span>❤️ Amor-Próprio:</span>
+                    <strong id="amor-valor">{{ user.amor_proprio }}</strong>/100
+                </div>
+                <div class="barra-progresso amor-bar">
+                    <div class="barra-fill" id="amor-progresso" style="width: {{ user.amor_proprio }}%"></div>
+                </div>
+                <div class="estado-emocional" id="estado-emocional">{{ user_estado }}</div>
+            </div>
+            <div class="lagrimas-status">
+                <span>💧 Lágrimas disponíveis</span>
+                <strong id="lagrimas-valor">{{ user.lagrimas }}</strong>
+                <small>Cada decisão custa {{ custo_decisao }} Lágrima</small>
+            </div>
+        </div>
+        <div class="nav-user">
+            <span>{{ user.username }}</span>
+            {% if user.amor_proprio == 0 or user.lagrimas == 0 %}
+            <form method="POST" action="{{ url_for('main.reiniciar') }}">
+                <button type="submit" class="btn-logout">Reiniciar</button>
+            </form>
+            {% endif %}
+            <a href="{{ url_for('main.logout') }}" class="btn-logout">Logout</a>
+        </div>
+    </nav>
+</header>
+
+<div class="dashboard" id="dashboard-main">
+    <section class="secao-principal" aria-labelledby="secao-titulo">
+        <article>
+            <h2 id="secao-titulo" class="secao-titulo">O teu Espaço de Cura</h2>
+            <p class="secao-desc">Enfrenta as recordações do passado e recupera o teu Amor-Próprio.</p>
+
+            <div class="slots-grid" role="list">
+                {% for slot in slots %}
+                <div class="slot" id="slot-{{ slot.numero }}" role="listitem" data-numero="{{ slot.numero }}" data-estado="{{ slot.estado }}" data-tipo="{{ slot.tipo or '' }}" data-etapa="{{ slot.etapa or 0 }}">
+
+                    {% if slot.estado == 'vazio' %}
+                    {% set tipo_info = construcoes[slot.tipo] %}
+                    <div class="slot-vazio">
+                        <img class="slot-icone-img" src="{{ url_for('static', filename=tipo_info.imagem) }}" alt="{{ tipo_info.nome }}">
+                        <p>{{ tipo_info.nome }}</p>
+                        <p class="slot-sub">{{ tipo_info.descricao }}</p>
+                        <p class="slot-custo">💧 {{ tipo_info.custo_lagrimas }} Lágrimas · ⏱ {{ tipo_info.tempo_construcao }}s</p>
+                        <button type="button" class="btn btn-slot" data-action="construir" data-slot="{{ slot.numero }}" data-tipo="{{ slot.tipo }}" aria-label="Construir slot {{ slot.numero }}">Preparar espaço</button>
+                    </div>
+
+                    {% elif slot.estado == 'construindo' %}
+                    {% set tipo_info = construcoes[slot.tipo] %}
+                    <div class="slot-processando">
+                        <div class="slot-icone">🛠️</div>
+                        <p>A preparar {{ tipo_info.nome }}</p>
+                        <p class="slot-sub">O espaço ficará disponível quando a preparação terminar.</p>
+                        <div class="barra-progresso">
+                            <div class="barra-fill barra-tarefa" id="barra-{{ slot.numero }}" style="width:0%"></div>
+                        </div>
+                        <p class="contador" id="contador-{{ slot.numero }}">A calcular...</p>
+                    </div>
+
+                    {% elif slot.estado == 'ativo' %}
+                    {% set tipo_info = construcoes[slot.tipo] %}
+                    {% set total_momentos = tarefas[slot.tipo] | length %}
+                    <div class="slot-ativo">
+                        <img class="slot-icone-img" src="{{ url_for('static', filename=tipo_info.imagem) }}" alt="{{ tipo_info.nome }}">
+                        <p>{{ tipo_info.nome }}</p>
+                        <p class="slot-meta">Momento {{ slot.etapa or 1 }} de {{ total_momentos }}</p>
+                        <p class="slot-sub estado-ativo">✅ Pronto para tarefas!</p>
+                        <button type="button" class="btn btn-slot btn-acao" data-action="abrirMenuTarefas" data-slot="{{ slot.numero }}" data-tipo="{{ slot.tipo }}" aria-label="Tomar Decisão ⭐ no slot {{ slot.numero }}">Tomar Decisão ⭐</button>
+                    </div>
+
+                    {% elif slot.estado == 'processando' %}
+                    {% set tipo_info = construcoes[slot.tipo] %}
+                    <div class="slot-processando">
+                        <div class="slot-icone">⏳</div>
+                        <p>{{ tipo_info.nome }}</p>
+                        <p class="slot-sub">{{ slot.tarefa_nome }}</p>
+                        <div class="barra-progresso">
+                            <div class="barra-fill barra-tarefa" id="barra-{{ slot.numero }}" style="width:0%"></div>
+                        </div>
+                        <p class="contador" id="contador-{{ slot.numero }}">A calcular...</p>
+                    </div>
+
+                    {% elif slot.estado == 'concluida' %}
+                    {% set tipo_info = construcoes[slot.tipo] %}
+                    <div class="slot-concluida">
+                        <div class="slot-icone">🎉</div>
+                        <p>{{ tipo_info.nome }}</p>
+                        <p class="slot-sub estado-concluida">{{ slot.tarefa_nome }}</p>
+                        <button type="button" class="btn btn-slot btn-recolher" data-action="recolher" data-slot="{{ slot.numero }}" aria-label="Tentar seguir em Frente slot {{ slot.numero }}">Tentar seguir em Frente ✨</button>
+                    </div>
+                    {% elif slot.estado == 'finalizado' %}
+                    {% set tipo_info = construcoes[slot.tipo] %}
+                    <div class="slot-finalizado">
+                        <img class="slot-finalizado-coracao" src="{{ url_for('static', filename='img/pixel_heart.png') }}" alt="Coração">
+                        <p>{{ tipo_info.nome }}</p>
+                        <p class="slot-sub estado-ativo">Espaço concluído</p>
+                        <p class="slot-sub">Completaste todos os momentos deste espaço.</p>
+                    </div>
+                    {% endif %}
+
+                </div>
+                {% endfor %}
+            </div>
+        </article>
+    </section>
+
+    <aside class="painel-lateral" aria-labelledby="painel-titulo">
+        <div class="painel-secao">
+            <h3 id="painel-titulo">🏆 Top Amor-Próprio</h3>
+            <table class="leaderboard">
+                <thead>
+                    <tr><th>#</th><th>Nome</th><th>Amor-Próprio</th><th>Estado</th></tr>
+                </thead>
+                <tbody>
+                    {% for u in top_users %}
+                    <tr class="{% if u.id == user.id %}linha-proprio{% endif %}">
+                        <td>
+                            {% if loop.index == 1 %}🥇
+                            {% elif loop.index == 2 %}🥈
+                            {% elif loop.index == 3 %}🥉
+                            {% else %}{{ loop.index }}
+                            {% endif %}
+                        </td>
+                        <td title="{{ u.username }}">{{ u.username }}</td>
+                        <td>{{ u.amor_proprio }}</td>
+                        <td>{{ u.estado }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <button id="theme-toggle" class="btn theme-toggle-inline" type="button" aria-label="Alternar modo escuro">Modo escuro</button>
+    </aside>
+</div>
+
+<!-- MODAL: TAREFAS -->
+<div class="modal-overlay" id="modal-tarefas" style="display:none">
+    <div class="modal">
+        <h3>📋 Escolhe uma tarefa</h3>
+        <div class="opcoes-tarefas" id="opcoes-tarefas-lista"></div>
+        <button type="button" class="btn btn-cancelar" data-action="fecharModal">Cancelar</button>
+    </div>
+</div>
+
+<!-- MODAL: NOTIFICAÇÃO -->
+<div class="notificacao" id="notificacao" style="display:none"></div>
+
+<!-- MODAL: 100 AMOR-PRÓPRIO -->
+<div class="popup-cura-overlay" id="popup-cura" style="display:none">
+    <div class="popup-cura" role="dialog" aria-modal="true" aria-labelledby="popup-cura-titulo">
+        <div class="popup-cura-topo">
+            <span id="popup-cura-titulo">reminder</span>
+            <button type="button" class="popup-cura-fechar" data-action="fecharPopupCura" aria-label="Fechar">×</button>
+        </div>
+        <div class="popup-cura-conteudo">
+            <p>Parabéns! fizeste um ótimo<br>trabalho para ultrapassares<br>essa dor!</p>
+            <p>Lembra-te, o melhor<br>amor...é o amor próprio!</p>
+            <button type="button" class="popup-cura-ok" data-action="fecharPopupCura">OK</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script id="tarefas-data" type="application/json">{{ tarefas | tojson | safe }}</script>
+<script src="{{ url_for('static', filename='js/jogo.js') }}"></script>
+{% endblock %}
