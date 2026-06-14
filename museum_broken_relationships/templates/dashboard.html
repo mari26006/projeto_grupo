@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
 {% block body_class %}dashboard-page{% endblock %}
-{% block site_header %}{% endblock %}
 {% block content %}
 <header role="banner">
     <nav class="navbar nav-inner" aria-label="Navegação principal">
@@ -43,21 +42,9 @@
                         <button type="button" class="btn btn-slot" data-action="construir" data-slot="{{ slot.numero }}" data-tipo="{{ slot.tipo }}" aria-label="Construir slot {{ slot.numero }}">Explorar espaço de cura</button>
                     </div>
 
-                    {% elif slot.estado == 'construindo' %}
-                    {% set tipo_info = construcoes[slot.tipo] %}
-                    <div class="slot-construindo">
-                        <div class="slot-icone">🔨</div>
-                        <p>{{ tipo_info.nome }}</p>
-                        <p class="slot-sub">Em construção...</p>
-                        <div class="barra-progresso">
-                            <div class="barra-fill" id="barra-{{ slot.numero }}" style="width:0%"></div>
-                        </div>
-                        <p class="contador" id="contador-{{ slot.numero }}">A calcular...</p>
-                    </div>
-
                     {% elif slot.estado == 'ativo' %}
                     {% set tipo_info = construcoes[slot.tipo] %}
-                    {% set total_momentos = tarefas_base[slot.tipo] | length %}
+                    {% set total_momentos = tarefas[slot.tipo] | length %}
                     <div class="slot-ativo">
                         <img class="slot-icone-img" src="{{ url_for('static', filename=tipo_info.imagem) }}" alt="{{ tipo_info.nome }}">
                         <p>{{ tipo_info.nome }}</p>

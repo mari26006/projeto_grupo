@@ -2,25 +2,15 @@
 // MUSEUM OF BROKEN RELATIONSHIPS - Jogo JS
 // =============================================
 
-let currentSlot = null;
 let TAREFAS_DATA = {};
 let TEMPO_NOTIFICACAO_MS = 15000;
 let TEMPO_RECARREGAR_APOS_MENSAGEM_MS = 7000;
 let TEMPO_RECARREGAR_APOS_RECOLHA_MS = 900;
 let popupCuraMostrado = false;
 
-// Tempos de ativação em segundos (têm de coincidir com o backend)
-let TEMPOS_ESPACO = {
-    'bau': 3,
-    'arquivo': 3,
-    'mente': 3,
-    'novos': 3
-};
-
 // ---- MODAL ----
 
 function abrirMenuTarefas(numSlot, tipo) {
-    currentSlot = numSlot;
     let slotEl = document.getElementById('slot-' + numSlot);
     let etapa = 1;
     if (slotEl && slotEl.dataset.etapa) {
@@ -86,7 +76,7 @@ document.addEventListener('click', function(e) {
         abrirMenuTarefas(slot, tipo);
     } else if (action === 'construir' && tipo) {
         if (slot) {
-            construir(slot, tipo);
+            construir(slot);
         }
     } else if (action === 'recolher' && slot) {
         recolher(slot);
@@ -105,7 +95,6 @@ function fecharModal() {
     if (tarefasModal) {
         tarefasModal.style.display = 'none';
     }
-    currentSlot = null;
 }
 
 function mostrarPopupCura(deveMostrar) {
@@ -165,7 +154,7 @@ function atualizarRecursos(amor, estado) {
 
 // ---- INICIAR ESPAÇO ----
 
-function construir(numSlot, tipo) {
+function construir(numSlot) {
     fecharModal();
     if (!numSlot) {
         mostrarNotificacao('❌ Slot inválido para construir.');
@@ -174,7 +163,7 @@ function construir(numSlot, tipo) {
     fetch('/api/construir', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slot: numSlot, tipo: tipo })
+        body: JSON.stringify({ slot: numSlot })
     })
     .then(function(res) { return res.json(); })
     .then(function(data) {
@@ -208,7 +197,6 @@ function darOrdem(numSlot, tarefaId, opcaoId) {
             mostrarNotificacao('❌ ' + data.erro);
         } else {
             atualizarRecursos(data.amor_proprio, data.estado_emocional);
-            mostrarPopupCura(data.mostrar_popup_cura);
             let deltaMessage = '💔 Amor-Próprio ' + data.delta;
             if (data.delta && data.delta.startsWith('+')) {
                 deltaMessage = '❤️ Amor-Próprio ' + data.delta;
@@ -291,12 +279,9 @@ function iniciarContadores() {
         let estado = slotEl.dataset.estado;
         let numSlot = parseInt(slotEl.dataset.numero);
 
-        if (estado === 'construindo' || estado === 'processando') {
+        if (estado === 'processando') {
             // Pede ao servidor quantos segundos restam
             let rota = '/api/verificar_tarefa';
-            if (estado === 'construindo') {
-                rota = '/api/verificar_construcao';
-            }
             fetch(rota, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -304,7 +289,7 @@ function iniciarContadores() {
             })
             .then(function(res) { return res.json(); })
             .then(function(data) {
-                if (data.estado === 'ativo' || data.estado === 'concluida') {
+                if (data.estado === 'concluida') {
                     // Terminou enquanto a página carregou, recarrega
                     location.reload();
                     return;
@@ -313,15 +298,8 @@ function iniciarContadores() {
                 let segundos = data.segundos_restantes || 0;
 
                 // Calcula tempo total para a barra
-                let tipoSlot = slotEl.dataset.tipo;
                 let tempoTotal = 60;
-                if (estado === 'construindo' && TEMPOS_ESPACO[tipoSlot]) {
-                    tempoTotal = TEMPOS_ESPACO[tipoSlot];
-                } else {
-                    // Para tarefas, estimamos o tempo total a partir dos dados JS
-                    // (simplificado: usamos os segundos restantes como referência)
-                    tempoTotal = segundos > 0 ? segundos * 1.1 : 60;
-                }
+                tempoTotal = segundos > 0 ? segundos * 1.1 : 60;
 
                 let contadorEl = document.getElementById('contador-' + numSlot);
                 let barraEl = document.getElementById('barra-' + numSlot);

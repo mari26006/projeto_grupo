@@ -41,7 +41,6 @@ def init_db():
             estado TEXT DEFAULT 'vazio',
             tipo TEXT,
             etapa INTEGER DEFAULT 0,
-            construcao_fim TEXT,
             tarefa_fim TEXT,
             tarefa_nome TEXT,
             FOREIGN KEY (user_id) REFERENCES user(id)
@@ -117,9 +116,6 @@ def validate_login_form(form):
 
     return data, errors
 
-def now_str():
-    return datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-
 def str_to_dt(s):
     if not s:
         return None
@@ -146,37 +142,21 @@ CONSTRUCOES = {
     'bau': {
         'nome': 'Baú das Recordações Físicas',
         'descricao': 'Escolhas pesadas com objetos e lembranças físicas. Risco e recompensa emocional.',
-        'dificuldade': 'Mais difícil',
-        'ganhos': '+5 a +10 Amor-Próprio',
-        'custo': 50,
-        'tempo': 3,
         'imagem': 'img/bau.png'
     },
     'arquivo': {
         'nome': 'Arquivo Digital',
         'descricao': 'Mensagens, fotografias e redes sociais. Cada clique tem consequência.',
-        'dificuldade': 'Intermédio',
-        'ganhos': '+8 a +12 Amor-Próprio',
-        'custo': 150,
-        'tempo': 3,
         'imagem': 'img/arquivodigital.png'
     },
     'mente': {
         'nome': 'A Mente e os Pensamentos',
         'descricao': 'Enfrenta emoções, saudades e padrões de pensamento repetitivos.',
-        'dificuldade': 'Emocional',
-        'ganhos': '+10 a +15 Amor-Próprio',
-        'custo': 300,
-        'tempo': 3,
         'imagem': 'img/mentepensamentos.png'
     },
     'novos': {
         'nome': 'Novos Começos',
         'descricao': 'Novas experiências, amizades e pequenos passos para o futuro.',
-        'dificuldade': 'Positivo',
-        'ganhos': '+12 a +18 Amor-Próprio',
-        'custo': 200,
-        'tempo': 3,
         'imagem': 'img/novoscomecos.png'
     }
 }
@@ -211,7 +191,7 @@ def limitar_amor_antes_da_cura(conn, user_id, amor_proprio):
         conn.commit()
     return amor_limitado
 
-def calcular_amor_proprio(conn, user_id, amor_atual, amor_delta):
+def calcular_amor_proprio(amor_atual, amor_delta):
     return max(0, min(100, amor_atual + amor_delta))
 
 TAREFAS = {
@@ -503,14 +483,8 @@ def dashboard():
         slots=slots,
         construcoes=CONSTRUCOES,
         tarefas=tarefas_para_template,
-        tarefas_base=TAREFAS,
-        top_users=top_users,
-        agora=datetime.utcnow()
+        top_users=top_users
     )
-
-@app.route('/jogo')
-def jogo():
-    return redirect(url_for('dashboard'))
 
 # =====================
 # ROTAS DO JOGO (API)
@@ -546,7 +520,7 @@ def construir():
         conn.close()
         return jsonify({'erro': 'Ficaste desolado/a. Reinicia o progresso para voltar a tentar.'}), 400
 
-    conn.execute('UPDATE slot SET estado = ?, construcao_fim = NULL, etapa = ?, tarefa_correta = ? WHERE id = ?',
+    conn.execute('UPDATE slot SET estado = ?, etapa = ?, tarefa_correta = ? WHERE id = ?',
                  ('ativo', 1, 0, slot['id']))
     conn.commit()
     conn.close()
@@ -555,33 +529,6 @@ def construir():
         'sucesso': True,
         'estado_emocional': get_estado_emocional(amor_atual)
     })
-
-@app.route('/api/verificar_construcao', methods=['POST'])
-def verificar_construcao():
-    if 'user_id' not in session:
-        return jsonify({'erro': 'Não autenticado'}), 401
-
-    data = request.get_json()
-    slot_num = data.get('slot')
-
-    conn = get_db()
-    slot = conn.execute('SELECT * FROM slot WHERE user_id = ? AND numero = ?',
-                        (session['user_id'], slot_num)).fetchone()
-
-    if not slot or slot['estado'] != 'construindo':
-        conn.close()
-        return jsonify({'erro': 'Slot inválido'}), 400
-
-    fim = str_to_dt(slot['construcao_fim'])
-    if datetime.utcnow() >= fim:
-        conn.execute('UPDATE slot SET estado = ? WHERE id = ?', ('ativo', slot['id']))
-        conn.commit()
-        conn.close()
-        return jsonify({'sucesso': True, 'estado': 'ativo'})
-
-    segundos = int((fim - datetime.utcnow()).total_seconds())
-    conn.close()
-    return jsonify({'sucesso': False, 'segundos_restantes': segundos})
 
 @app.route('/api/dar_ordem', methods=['POST'])
 def dar_ordem():
@@ -652,7 +599,7 @@ def dar_ordem():
     if resposta_correta and amor_delta <= 0:
         amor_delta = 8
 
-    novo_amor = calcular_amor_proprio(conn, user['id'], amor_atual, amor_delta)
+    novo_amor = calcular_amor_proprio(amor_atual, amor_delta)
     fim = (datetime.utcnow() + timedelta(seconds=tarefa['tempo'])).strftime('%Y-%m-%d %H:%M:%S')
 
     if tarefa_id == 'redes':
@@ -761,7 +708,7 @@ def reiniciar():
 
     conn.execute('UPDATE user SET amor_proprio = ? WHERE id = ?', (AMOR_PROPRIO_INICIAL, user['id']))
     conn.execute(
-        'UPDATE slot SET estado = ?, tipo = NULL, etapa = 0, construcao_fim = NULL, tarefa_fim = NULL, tarefa_nome = NULL WHERE user_id = ?',
+        'UPDATE slot SET estado = ?, etapa = 0, tarefa_fim = NULL, tarefa_nome = NULL, tarefa_correta = 0 WHERE user_id = ?',
         ('vazio', user['id'])
     )
     conn.commit()
@@ -814,10 +761,7 @@ def estado():
     slots_data = []
     for s in slots:
         seg_restantes = None
-        if s['construcao_fim'] and s['estado'] == 'construindo':
-            fim = str_to_dt(s['construcao_fim'])
-            seg_restantes = max(0, int((fim - datetime.utcnow()).total_seconds()))
-        elif s['tarefa_fim'] and s['estado'] == 'processando':
+        if s['tarefa_fim'] and s['estado'] == 'processando':
             fim = str_to_dt(s['tarefa_fim'])
             seg_restantes = max(0, int((fim - datetime.utcnow()).total_seconds()))
 
