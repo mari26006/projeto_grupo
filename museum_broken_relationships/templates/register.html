@@ -3,7 +3,7 @@
 <div class="auth-page">
     <div class="auth-card">
         <div class="auth-header">
-            <a href="{{ url_for('index') }}" class="voltar">← Voltar</a>
+            <a href="{{ url_for('main.index') }}" class="voltar">← Voltar</a>
             <h2>💔 Contrato de Compromisso</h2>
             <p>com o Amor-Próprio</p>
         </div>
@@ -12,7 +12,7 @@
         <div class="alerta erro">{{ erro }}</div>
         {% endif %}
 
-        <form method="POST" action="{{ url_for('register') }}">
+        <form method="POST" action="{{ url_for('main.register') }}">
             <div class="campo">
                 <label for="username">O teu nome de guerra</label>
                 <input id="username" type="text" name="username" value="{{ values.get('username', '') if values else '' }}" placeholder="ex: Afonso20" required maxlength="80">
@@ -27,10 +27,11 @@
             </div>
             <div class="recursos-iniciais">
                 <span>❤️ Começas com: <strong>4 Amor-Próprio</strong></span>
+                <span>💧 <strong>60 Lágrimas</strong></span>
             </div>
             <button type="submit" class="btn btn-principal btn-full">Assinar o Contrato</button>
         </form>
-        <p class="auth-link">Já tens conta? <a href="{{ url_for('login') }}">Faz Login</a></p>
+        <p class="auth-link">Já tens conta? <a href="{{ url_for('main.login') }}">Faz Login</a></p>
     </div>
 </div>
 {% endblock %}

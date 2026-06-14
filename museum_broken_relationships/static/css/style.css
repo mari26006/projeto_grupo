@@ -43,21 +43,25 @@
 }
 
 html, body {
+    /* Mantém a página limitada à altura total da janela. */
     height: 100%;
     min-height: 100%;
 }
 
 html {
+    /* Evita uma área branca e o efeito de arrastar para além da página. */
     background: #fce4ec;
     overscroll-behavior: none;
 }
 
 body {
     font-family: 'Lato', sans-serif;
+    /* Usa a altura visível real do ecrã, incluindo em dispositivos móveis. */
     min-height: 100vh;
     min-height: 100dvh;
     background: url("../img/fundo.jpeg") center top / cover fixed no-repeat;
     color: var(--text);
+    /* Impede o arrastamento vertical para fora dos limites da página. */
     overscroll-behavior: none;
 }
 
@@ -90,12 +94,14 @@ main, #main-content {
 }
 
 .dashboard-page {
+    /* Faz o dashboard ocupar apenas o ecrã visível e remove o scroll vertical. */
     height: 100vh;
     height: 100dvh;
     overflow: hidden;
 }
 
 .dashboard-page #main-content {
+    /* Impede o conteúdo principal de criar espaço adicional abaixo da imagem. */
     height: 100%;
     min-height: 0;
     overflow: hidden;
@@ -580,6 +586,33 @@ header[role="banner"] {
     font-family: 'Playfair Display', serif;
     font-size: 1.4rem;
     margin-bottom: 4px;
+}
+
+.lagrimas-status {
+    min-width: 170px;
+    background: rgba(255,255,255,0.82);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 18px;
+    padding: 12px 16px;
+    box-shadow: 0 16px 60px rgba(41, 22, 26, 0.1);
+    display: grid;
+    gap: 3px;
+}
+
+.lagrimas-status strong {
+    color: #3788a8;
+    font-size: 1.35rem;
+}
+
+.lagrimas-status small,
+.slot-custo {
+    color: var(--text-secondary);
+    font-size: 0.76rem;
+}
+
+.dark-mode .lagrimas-status {
+    background: rgba(38, 24, 27, 0.92);
+    border-color: rgba(232, 160, 180, 0.16);
 }
 
 .secao-desc {
@@ -1067,16 +1100,21 @@ body.dark-mode .modal {
 
 @media (max-width: 900px) {
     .dashboard-page {
-        height: 100vh;
-        height: 100dvh;
-        overflow: hidden;
+        height: auto;
+        min-height: 100dvh;
+        overflow-y: auto;
+    }
+    .dashboard-page #main-content {
+        height: auto;
+        min-height: 100dvh;
+        overflow: visible;
     }
     .dashboard {
         grid-template-columns: 1fr;
         padding: 16px;
     }
     .painel-lateral {
-        order: -1;
+        order: 1;
     }
     .painel-secao {
         padding: 16px;
@@ -1102,6 +1140,13 @@ body.dark-mode .modal {
     }
     .nav-recursos {
         gap: 8px;
+        width: 100%;
+    }
+    .amor-proprio-status,
+    .lagrimas-status {
+        width: 100%;
+        max-width: none;
+        min-width: 0;
     }
     .leaderboard {
         font-size: 0.78rem;

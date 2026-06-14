@@ -15,10 +15,20 @@
                 </div>
                 <div class="estado-emocional" id="estado-emocional">{{ user_estado }}</div>
             </div>
+            <div class="lagrimas-status">
+                <span>💧 Lágrimas disponíveis</span>
+                <strong id="lagrimas-valor">{{ user.lagrimas }}</strong>
+                <small>Cada decisão custa {{ custo_decisao }} Lágrima</small>
+            </div>
         </div>
         <div class="nav-user">
             <span>{{ user.username }}</span>
-            <a href="{{ url_for('logout') }}" class="btn-logout">Logout</a>
+            {% if user.amor_proprio == 0 or user.lagrimas == 0 %}
+            <form method="POST" action="{{ url_for('main.reiniciar') }}">
+                <button type="submit" class="btn-logout">Reiniciar</button>
+            </form>
+            {% endif %}
+            <a href="{{ url_for('main.logout') }}" class="btn-logout">Logout</a>
         </div>
     </nav>
 </header>
@@ -39,7 +49,20 @@
                         <img class="slot-icone-img" src="{{ url_for('static', filename=tipo_info.imagem) }}" alt="{{ tipo_info.nome }}">
                         <p>{{ tipo_info.nome }}</p>
                         <p class="slot-sub">{{ tipo_info.descricao }}</p>
-                        <button type="button" class="btn btn-slot" data-action="construir" data-slot="{{ slot.numero }}" data-tipo="{{ slot.tipo }}" aria-label="Construir slot {{ slot.numero }}">Explorar espaço de cura</button>
+                        <p class="slot-custo">💧 {{ tipo_info.custo_lagrimas }} Lágrimas · ⏱ {{ tipo_info.tempo_construcao }}s</p>
+                        <button type="button" class="btn btn-slot" data-action="construir" data-slot="{{ slot.numero }}" data-tipo="{{ slot.tipo }}" aria-label="Construir slot {{ slot.numero }}">Preparar espaço</button>
+                    </div>
+
+                    {% elif slot.estado == 'construindo' %}
+                    {% set tipo_info = construcoes[slot.tipo] %}
+                    <div class="slot-processando">
+                        <div class="slot-icone">🛠️</div>
+                        <p>A preparar {{ tipo_info.nome }}</p>
+                        <p class="slot-sub">O espaço ficará disponível quando a preparação terminar.</p>
+                        <div class="barra-progresso">
+                            <div class="barra-fill barra-tarefa" id="barra-{{ slot.numero }}" style="width:0%"></div>
+                        </div>
+                        <p class="contador" id="contador-{{ slot.numero }}">A calcular...</p>
                     </div>
 
                     {% elif slot.estado == 'ativo' %}

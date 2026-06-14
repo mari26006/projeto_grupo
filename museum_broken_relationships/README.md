@@ -1,64 +1,58 @@
 # Museum of Broken Relationships
 
-Projeto final da unidade curricular de Desenvolvimento de Aplicações Web (DAW).
+Projeto final de Desenvolvimento de Aplicações Web do Instituto Politécnico de Setúbal — ESCE, ano letivo 2025/2026.
 
-Instituto Politécnico de Setúbal - ESCE
+## Sobre o jogo
 
-Ano letivo 2025/2026
+O *Museum of Broken Relationships* é um jogo web de gestão emocional inspirado na recuperação após o fim de uma relação.
 
-## Descrição
+Cada utilizador começa com:
 
-O Museum of Broken Relationships é um jogo web sobre a recuperação depois do fim de uma relação.
+- `4` pontos de Amor-Próprio;
+- `60` Lágrimas.
 
-Cada utilizador começa com 4 pontos de Amor-Próprio e deve explorar quatro espaços de cura:
+As Lágrimas são utilizadas para preparar espaços e tomar decisões. As decisões alteram o Amor-Próprio e respostas corretas permitem recuperar Lágrimas. O objetivo é concluir os quatro espaços de cura e alcançar 100 pontos de Amor-Próprio.
 
-- Baú das Recordações Físicas
-- Arquivo Digital
-- A Mente e os Pensamentos
-- Novos Começos
-
-Em cada espaço, o utilizador toma decisões que podem aumentar ou diminuir o seu Amor-Próprio. O objetivo é concluir todos os momentos e alcançar 100 pontos.
+Se o Amor-Próprio ou as Lágrimas chegarem a zero, o jogador pode reiniciar a jornada.
 
 ## Funcionalidades
 
-- Registo e login de utilizadores
-- Passwords protegidas com hashing
-- Sessões de utilizador
-- Quatro espaços de cura com diferentes momentos
-- Decisões com consequências no Amor-Próprio
-- Estados emocionais baseados na pontuação
-- Tarefas com temporizador
-- Classificação dos dez utilizadores com mais Amor-Próprio
-- Tema claro e tema escuro
-- Base de dados SQLite
+- Registo, login, logout e sessões com Flask-Login;
+- Passwords protegidas com Passlib;
+- Dois recursos: Amor-Próprio e Lágrimas;
+- Quatro espaços com custos e tempos de preparação;
+- Decisões, tarefas temporizadas e recolha manual;
+- Estados emocionais baseados no Amor-Próprio;
+- Leaderboard dos dez melhores utilizadores;
+- Tema claro e escuro persistente;
+- Layout responsivo para desktop, tablet e mobile;
+- API JSON validada no servidor;
+- Testes automatizados dos fluxos principais.
+
+## Arquitetura MVC
+
+- **Model:** `models/game_model.py` — base de dados, validações e regras do jogo.
+- **View:** `templates/` e `static/` — templates Jinja, CSS, JavaScript e imagens.
+- **Controller:** `controllers/main_controller.py` — rotas, autenticação e respostas HTTP/JSON.
+- **Inicialização:** `app.py` — configuração da aplicação e registo do Controller.
 
 ## Tecnologias
 
-- Python 3
-- Flask
-- SQLite
-- Passlib
-- HTML5 e templates Jinja
-- CSS3
-- JavaScript
+- Python 3;
+- Flask 3.1;
+- Flask-Login;
+- SQLite;
+- Passlib;
+- HTML5, Jinja, CSS3 e JavaScript.
 
-O código utiliza os conceitos apresentados nos laboratórios de DAW, incluindo HTML semântico, CSS responsivo, manipulação do DOM, JSON, Flask, formulários, SQLite, sessões e hashing de passwords.
-
-## Como executar
-
-### 1. Entrar na pasta do projeto
+## Instalação
 
 ```bash
 cd museum_broken_relationships
-```
-
-### 2. Criar um ambiente virtual
-
-```bash
 python -m venv venv
 ```
 
-Ativar no Windows:
+Ativar o ambiente virtual no Windows:
 
 ```bash
 venv\Scripts\activate
@@ -70,70 +64,61 @@ Ativar no macOS ou Linux:
 source venv/bin/activate
 ```
 
-### 3. Instalar as dependências
+Instalar e executar:
 
 ```bash
 pip install -r requirements.txt
-```
-
-### 4. Executar a aplicação
-
-```bash
 python app.py
 ```
 
-### 5. Abrir no browser
-
-Aceder a:
+A aplicação fica disponível em:
 
 ```text
 http://127.0.0.1:5000
 ```
 
-As páginas devem ser abertas através do servidor Flask. Não se deve abrir diretamente os ficheiros da pasta `templates`.
+A base de dados `game.db` é criada automaticamente na primeira execução.
 
-## Estrutura do projeto
+## Testes
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+## Estrutura
 
 ```text
 museum_broken_relationships/
 |-- app.py
-|-- game.db
 |-- requirements.txt
 |-- README.md
+|-- api_documentacao.md
+|-- base_dados.sql
+|-- controllers/
+|   `-- main_controller.py
+|-- models/
+|   `-- game_model.py
 |-- templates/
 |   |-- base.html
 |   |-- index.html
 |   |-- login.html
 |   |-- register.html
 |   `-- dashboard.html
-`-- static/
-    |-- css/
-    |   `-- style.css
-    |-- img/
-    |   |-- branch_landing.gif
-    |   |-- fundo.jpeg
-    |   |-- fundo_escuro.jpeg
-    |   `-- pixel_heart.png
-    `-- js/
-        |-- jogo.js
-        `-- tema.js
+|-- static/
+|   |-- css/style.css
+|   |-- js/jogo.js
+|   |-- js/tema.js
+|   `-- img/
+|-- tests/
+|   `-- test_app.py
+|-- RELATORIO_TECNICO_REVISTO.md
+|-- relatorio_museum_broken_relationships_alinhado.docx
+`-- relatorio_museum_broken_relationships_final.pdf
 ```
 
-## Ficheiros principais
+## Documentação
 
-- `app.py`: aplicação Flask, rotas, autenticação, regras do jogo e acesso à base de dados.
-- `templates/base.html`: estrutura comum das páginas.
-- `templates/dashboard.html`: dashboard principal do jogo.
-- `static/css/style.css`: apresentação visual e responsividade.
-- `static/js/jogo.js`: interações, tarefas, notificações e temporizadores.
-- `static/js/tema.js`: alteração e armazenamento do tema visual.
-- `game.db`: base de dados SQLite criada automaticamente.
-
-## Base de dados
-
-A aplicação cria automaticamente as tabelas necessárias:
-
-- `user`: guarda os utilizadores e a respetiva pontuação.
-- `slot`: guarda o estado dos quatro espaços de cura de cada utilizador.
-
-As passwords nunca são guardadas em texto simples. Os novos registos utilizam hashing através da biblioteca Passlib.
+- `api_documentacao.md`: rotas, parâmetros e respostas da API;
+- `base_dados.sql`: esquema da base de dados;
+- `RELATORIO_TECNICO_REVISTO.md`: versão editável do relatório;
+- `relatorio_museum_broken_relationships_final.pdf`: relatório final.

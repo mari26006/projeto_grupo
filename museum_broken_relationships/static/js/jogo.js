@@ -36,7 +36,7 @@ function abrirMenuTarefas(numSlot, tipo) {
             '<p class="modal-momento">Momento ' + etapa + '</p>' +
             '<p>' + tarefa.situacao + '</p>' +
             '<p class="modal-pergunta">O que pretendes fazer?</p>' +
-            '<p class="texto-custo">⏱ ' + tarefa.tempo + 's</p>' +
+            '<p class="texto-custo">💧 1 Lágrima · ⏱ ' + tarefa.tempo + 's</p>' +
         '</div>';
 
     for (let i = 0; i < tarefa.opcoes.length; i++) {
@@ -136,10 +136,11 @@ function mostrarNotificacao(msg) {
 
 // ---- ATUALIZAR RECURSOS NA NAVBAR ----
 
-function atualizarRecursos(amor, estado) {
+function atualizarRecursos(amor, estado, lagrimas) {
     let elAmor = document.getElementById('amor-valor');
     let elBar = document.getElementById('amor-progresso');
     let elEstado = document.getElementById('estado-emocional');
+    let elLagrimas = document.getElementById('lagrimas-valor');
 
     if (elAmor && amor !== null && amor !== undefined) {
         elAmor.textContent = amor;
@@ -149,6 +150,9 @@ function atualizarRecursos(amor, estado) {
     }
     if (elEstado && estado) {
         elEstado.textContent = estado;
+    }
+    if (elLagrimas && lagrimas !== null && lagrimas !== undefined) {
+        elLagrimas.textContent = lagrimas;
     }
 }
 
@@ -170,7 +174,7 @@ function construir(numSlot) {
         if (data.erro) {
             mostrarNotificacao('❌ ' + data.erro);
         } else {
-            atualizarRecursos(null, data.estado_emocional);
+            atualizarRecursos(null, data.estado_emocional, data.lagrimas);
             mostrarNotificacao('✨ A preparar o espaço...');
             setTimeout(function() { location.reload(); }, 500);
         }
@@ -196,7 +200,7 @@ function darOrdem(numSlot, tarefaId, opcaoId) {
         if (data.erro) {
             mostrarNotificacao('❌ ' + data.erro);
         } else {
-            atualizarRecursos(data.amor_proprio, data.estado_emocional);
+            atualizarRecursos(data.amor_proprio, data.estado_emocional, data.lagrimas);
             let deltaMessage = '💔 Amor-Próprio ' + data.delta;
             if (data.delta && data.delta.startsWith('+')) {
                 deltaMessage = '❤️ Amor-Próprio ' + data.delta;
@@ -243,7 +247,7 @@ function recolher(numSlot) {
         } else {
             let estadoEl = document.getElementById('estado-emocional');
             let oldEstado = estadoEl ? estadoEl.textContent : '';
-            atualizarRecursos(data.amor_proprio, data.estado_emocional);
+            atualizarRecursos(data.amor_proprio, data.estado_emocional, data.lagrimas);
             mostrarPopupCura(data.mostrar_popup_cura);
             mostrarNotificacao(data.mensagem || '🎉 Tarefa concluída!');
             if (data.estado_emocional && oldEstado && data.estado_emocional !== oldEstado) {
@@ -279,7 +283,7 @@ function iniciarContadores() {
         let estado = slotEl.dataset.estado;
         let numSlot = parseInt(slotEl.dataset.numero);
 
-        if (estado === 'processando') {
+        if (estado === 'processando' || estado === 'construindo') {
             // Pede ao servidor quantos segundos restam
             let rota = '/api/verificar_tarefa';
             fetch(rota, {
@@ -289,9 +293,9 @@ function iniciarContadores() {
             })
             .then(function(res) { return res.json(); })
             .then(function(data) {
-                if (data.estado === 'concluida') {
-                    // Terminou enquanto a página carregou, recarrega
-                    location.reload();
+                if (data.estado === 'concluida' || data.estado === 'ativo') {
+                    mostrarNotificacao(data.mensagem || '✨ Processo concluído!');
+                    setTimeout(function() { location.reload(); }, 900);
                     return;
                 }
 
@@ -357,7 +361,7 @@ function pollingEstado() {
             }
 
             // Atualiza recursos
-            atualizarRecursos(data.amor_proprio, data.estado_emocional);
+            atualizarRecursos(data.amor_proprio, data.estado_emocional, data.lagrimas);
 
             // Verifica se algum slot mudou para 'concluida' e deve ser recarregado
             data.slots.forEach(function(s) {
