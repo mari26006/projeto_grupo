@@ -8,6 +8,13 @@ let TEMPO_RECARREGAR_APOS_MENSAGEM_MS = 7000;
 let TEMPO_RECARREGAR_APOS_RECOLHA_MS = 900;
 let popupCuraMostrado = false;
 
+function formatarDuracao(segundos) {
+    if (segundos % 60 === 0) {
+        return (segundos / 60) + ' min';
+    }
+    return segundos + 's';
+}
+
 // ---- MODAL ----
 
 function abrirMenuTarefas(numSlot, tipo) {
@@ -36,7 +43,7 @@ function abrirMenuTarefas(numSlot, tipo) {
             '<p class="modal-momento">Momento ' + etapa + '</p>' +
             '<p>' + tarefa.situacao + '</p>' +
             '<p class="modal-pergunta">O que pretendes fazer?</p>' +
-            '<p class="texto-custo">💧 1 Lágrima · ⏱ ' + tarefa.tempo + 's</p>' +
+            '<p class="texto-custo">💧 1 Lágrima · ⏱ ' + formatarDuracao(tarefa.tempo) + '</p>' +
         '</div>';
 
     for (let i = 0; i < tarefa.opcoes.length; i++) {

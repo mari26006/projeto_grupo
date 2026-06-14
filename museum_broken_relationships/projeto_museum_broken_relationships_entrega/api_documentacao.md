@@ -4,7 +4,7 @@ Todas as rotas `/api/` exigem autenticação através de Flask-Login e devolvem 
 
 ## POST `/api/construir`
 
-Inicia a preparação de um espaço vazio. A preparação consome Lágrimas e possui temporizador.
+Inicia a preparação de um espaço vazio. A preparação consome Lágrimas e demora 1 minuto.
 
 ```json
 {"slot": 1}
@@ -18,7 +18,7 @@ Resposta de sucesso:
 
 ## POST `/api/dar_ordem`
 
-Submete uma decisão. Cada decisão custa uma Lágrima.
+Submete uma decisão. Cada decisão custa uma Lágrima e inicia uma tarefa de 5 minutos.
 
 ```json
 {"slot": 1, "tarefa_id": "roupas", "opcao_id": "B"}

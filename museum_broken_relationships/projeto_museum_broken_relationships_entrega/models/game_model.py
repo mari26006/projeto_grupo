@@ -1,6 +1,5 @@
 import sqlite3
 import os
-import re
 from datetime import datetime
 from flask_login import UserMixin
 from passlib.hash import pbkdf2_sha256 as hasher
@@ -11,6 +10,8 @@ AMOR_PROPRIO_INICIAL = 4
 LAGRIMAS_INICIAIS = 60
 CUSTO_DECISAO = 1
 BONUS_LAGRIMAS_RESPOSTA_CORRETA = 2
+TEMPO_CONSTRUCAO_SEGUNDOS = 60
+TEMPO_TAREFA_SEGUNDOS = 300
 
 
 class User(UserMixin):
@@ -293,8 +294,8 @@ def validate_register_form(form):
     else:
         data['username'] = username
 
-    if not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', email):
-        errors.append('Introduz um email válido.')
+    if '@' not in email:
+        errors.append('O email deve conter @.')
     elif len(email) > 120:
         errors.append('O email não pode ter mais de 120 caracteres.')
     else:
@@ -359,28 +360,28 @@ CONSTRUCOES = {
         'descricao': 'Escolhas pesadas com objetos e lembranças físicas. Risco e recompensa emocional.',
         'imagem': 'img/bau.png',
         'custo_lagrimas': 3,
-        'tempo_construcao': 5
+        'tempo_construcao': TEMPO_CONSTRUCAO_SEGUNDOS
     },
     'arquivo': {
         'nome': 'Arquivo Digital',
         'descricao': 'Mensagens, fotografias e redes sociais. Cada clique tem consequência.',
         'imagem': 'img/arquivodigital.png',
         'custo_lagrimas': 4,
-        'tempo_construcao': 5
+        'tempo_construcao': TEMPO_CONSTRUCAO_SEGUNDOS
     },
     'mente': {
         'nome': 'A Mente e os Pensamentos',
         'descricao': 'Enfrenta emoções, saudades e padrões de pensamento repetitivos.',
         'imagem': 'img/mentepensamentos.png',
         'custo_lagrimas': 5,
-        'tempo_construcao': 5
+        'tempo_construcao': TEMPO_CONSTRUCAO_SEGUNDOS
     },
     'novos': {
         'nome': 'Novos Começos',
         'descricao': 'Novas experiências, amizades e pequenos passos para o futuro.',
         'imagem': 'img/novoscomecos.png',
         'custo_lagrimas': 6,
-        'tempo_construcao': 5
+        'tempo_construcao': TEMPO_CONSTRUCAO_SEGUNDOS
     }
 }
 
@@ -423,7 +424,7 @@ TAREFAS = {
             'id': 'roupas',
             'nome': 'Roupas do passado',
             'situacao': 'Encontraste roupas antigas do/a ex no armário.',
-            'tempo': 3,
+            'tempo': TEMPO_TAREFA_SEGUNDOS,
             'opcoes': [
                 {'id': 'A', 'label': 'Guardar por agora e decidir depois', 'amor_delta': -5, 'mensagem': 'Mantiveste as roupas. O passado ficou mais presente no teu espaço.'},
                 {'id': 'B', 'label': 'Separar para doar ou reciclar', 'amor_delta': 8, 'mensagem': 'Separaste as roupas. Estás a criar espaço físico e emocional.'}
@@ -433,7 +434,7 @@ TAREFAS = {
             'id': 'cartas',
             'nome': 'Cartas antigas',
             'situacao': 'Encontraste cartas antigas do teu ex.',
-            'tempo': 3,
+            'tempo': TEMPO_TAREFA_SEGUNDOS,
             'opcoes': [
                 {'id': 'A', 'label': 'Voltar a ler antes de decidir', 'amor_delta': -5, 'mensagem': 'Releste as cartas. Isso reacendeu sentimentos antigos.'},
                 {'id': 'B', 'label': 'Guardar num envelope fechado', 'amor_delta': 8, 'mensagem': 'Guardaste as cartas e criaste uma distância segura entre passado e presente.'}
@@ -443,7 +444,7 @@ TAREFAS = {
             'id': 'presentes',
             'nome': 'Presentes guardados',
             'situacao': 'Ainda tens presentes guardados do antigo relacionamento.',
-            'tempo': 3,
+            'tempo': TEMPO_TAREFA_SEGUNDOS,
             'opcoes': [
                 {'id': 'A', 'label': 'Manter como lembrança íntima', 'amor_delta': -5, 'mensagem': 'Mantiveste os presentes. O peso do passado ainda vibra contigo.'},
                 {'id': 'B', 'label': 'Reinventar ou doar com cuidado', 'amor_delta': 8, 'mensagem': 'Decidiste transformar os presentes. Isso abre espaço para algo novo.'}
@@ -455,7 +456,7 @@ TAREFAS = {
             'id': 'fotografias',
             'nome': 'Fotografias antigas',
             'situacao': 'Encontraste fotografias antigas em pastas digitais.',
-            'tempo': 3,
+            'tempo': TEMPO_TAREFA_SEGUNDOS,
             'opcoes': [
                 {'id': 'A', 'label': 'Deixar no álbum e revisitar mais tarde', 'amor_delta': -5, 'mensagem': 'Deixaste as fotos como estão. Ainda estás a dar espaço ao passado.'},
                 {'id': 'B', 'label': 'Mover para uma pasta privada', 'amor_delta': 8, 'mensagem': 'Organizaste as fotos num lugar protegido. Estás a construir um novo hábito.'}
@@ -465,7 +466,7 @@ TAREFAS = {
             'id': 'mensagens',
             'nome': 'Mensagens antigas',
             'situacao': 'Recebeste uma mensagem antiga do/a ex.',
-            'tempo': 3,
+            'tempo': TEMPO_TAREFA_SEGUNDOS,
             'opcoes': [
                 {'id': 'A', 'label': 'Guardar para pensar com calma', 'amor_delta': -5, 'mensagem': 'Guardaste a mensagem. Ficaste na dúvida entre passado e futuro.'},
                 {'id': 'B', 'label': 'Apagar para proteger a tua paz', 'amor_delta': 8, 'mensagem': 'Apagaste a mensagem. Cuidaste do teu coração.'}
@@ -475,7 +476,7 @@ TAREFAS = {
             'id': 'redes',
             'nome': 'Redes sociais',
             'situacao': 'Vistes o perfil do/a ex nas redes sociais.',
-            'tempo': 3,
+            'tempo': TEMPO_TAREFA_SEGUNDOS,
             'opcoes': [
                 {'id': 'A', 'label': 'Continuar a espreitar discretamente', 'amor_delta': -5, 'mensagem': 'Observaste o/a ex. Isso mantém-te preso/a a cenas antigas.'},
                 {'id': 'B', 'label': 'Bloquear e tentar seguir em frente', 'amor_delta': 8, 'mensagem': 'Bloqueaste o/a ex. Estás a cuidar da tua paz e do teu espaço mental.'}
@@ -487,7 +488,7 @@ TAREFAS = {
             'id': 'pensamentos',
             'nome': 'Pensamentos repetidos',
             'situacao': 'O mesmo pensamento sobre o relacionamento não te larga.',
-            'tempo': 3,
+            'tempo': TEMPO_TAREFA_SEGUNDOS,
             'opcoes': [
                 {'id': 'A', 'label': 'Permitir que ele te domine mais um pouco', 'amor_delta': -5, 'mensagem': 'Ficou mais difícil sair deste ciclo mental.'},
                 {'id': 'B', 'label': 'Anotar e redirecionar', 'amor_delta': 8, 'mensagem': 'Anotaste os pensamentos e mudaste o foco. Estás a cuidar da tua mente.'}
@@ -497,7 +498,7 @@ TAREFAS = {
             'id': 'autocuidado',
             'nome': 'Autocuidado',
             'situacao': 'Tens uma janela para fazer algo por ti hoje.',
-            'tempo': 3,
+            'tempo': TEMPO_TAREFA_SEGUNDOS,
             'opcoes': [
                 {'id': 'A', 'label': 'Ignorar o teu bem-estar', 'amor_delta': -5, 'mensagem': 'Ignoraste o autocuidado. O teu amor-próprio fica mais frágil.'},
                 {'id': 'B', 'label': 'Fazer algo gentil por ti', 'amor_delta': 8, 'mensagem': 'Escolheste cuidar de ti. Isso fortalece o teu amor-próprio.'}
@@ -507,7 +508,7 @@ TAREFAS = {
             'id': 'amigos',
             'nome': 'Apoio dos amigos',
             'situacao': 'Os teus amigos convidaram-te para sair.',
-            'tempo': 3,
+            'tempo': TEMPO_TAREFA_SEGUNDOS,
             'opcoes': [
                 {'id': 'A', 'label': 'Ficar em casa para te proteger', 'amor_delta': -5, 'mensagem': 'Ficaste isolado/a. Isso enfraquece a tua confiança.'},
                 {'id': 'B', 'label': 'Aceitar o convite e sair', 'amor_delta': 8, 'mensagem': 'Aceitaste o apoio. Estás a recuperar com companhia.'}
@@ -519,7 +520,7 @@ TAREFAS = {
             'id': 'hobbies',
             'nome': 'Hobbies novos',
             'situacao': 'Encontraste um novo hobby que te desperta curiosidade.',
-            'tempo': 3,
+            'tempo': TEMPO_TAREFA_SEGUNDOS,
             'opcoes': [
                 {'id': 'A', 'label': 'Guardar a ideia para depois', 'amor_delta': -5, 'mensagem': 'Deixaste a oportunidade passar. Sentes-te mais parado/a.'},
                 {'id': 'B', 'label': 'Experimentar algo novo hoje', 'amor_delta': 8, 'mensagem': 'Experimentaste algo novo. Estás a abrir espaço para uma nova versão tua.'}
@@ -529,7 +530,7 @@ TAREFAS = {
             'id': 'exercicio',
             'nome': 'Exercício físico',
             'situacao': 'O teu corpo pede movimento hoje.',
-            'tempo': 3,
+            'tempo': TEMPO_TAREFA_SEGUNDOS,
             'opcoes': [
                 {'id': 'A', 'label': 'Ficar no sofá e adiar', 'amor_delta': -5, 'mensagem': 'Adiaste o movimento. Acabaste por te sentir mais pesado/a.'},
                 {'id': 'B', 'label': 'Mover-te com um pequeno treino', 'amor_delta': 8, 'mensagem': 'Fizeste exercício. A tua energia mudou para melhor.'}
@@ -539,7 +540,7 @@ TAREFAS = {
             'id': 'experiencias',
             'nome': 'Novas experiências',
             'situacao': 'Surge uma oportunidade para algo diferente.',
-            'tempo': 3,
+            'tempo': TEMPO_TAREFA_SEGUNDOS,
             'opcoes': [
                 {'id': 'A', 'label': 'Manter a zona de conforto', 'amor_delta': -5, 'mensagem': 'Evitar a novidade deixa-te mais estagnado/a.'},
                 {'id': 'B', 'label': 'Dizer sim e aceitar', 'amor_delta': 8, 'mensagem': 'Aceitaste a experiência. Estás a recuperar com coragem.'}
@@ -552,7 +553,7 @@ PUBLICACOES_TAREFA = {
     'id': 'publicacoes',
     'nome': 'Novas publicações',
     'situacao': 'Há uma atualização do/a ex no feed que pode chegar mais tarde.',
-    'tempo': 3,
+    'tempo': TEMPO_TAREFA_SEGUNDOS,
     'opcoes': [
         {'id': 'A', 'label': 'Manter distância e não ver', 'amor_delta': 8, 'correta': True, 'mensagem': 'Optaste por não ver. Protegeste a tua paz e o teu progresso.'},
         {'id': 'B', 'label': 'Ver por curiosidade', 'amor_delta': -10, 'correta': False, 'mensagem': 'Abriste o feed e sentiste as emoções do passado.'}

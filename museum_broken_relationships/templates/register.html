@@ -19,7 +19,7 @@
             </div>
             <div class="campo">
                 <label for="email">Email</label>
-                <input id="email" type="email" name="email" value="{{ values.get('email', '') if values else '' }}" placeholder="o-teu@email.com" required maxlength="120">
+                <input id="email" type="text" name="email" value="{{ values.get('email', '') if values else '' }}" placeholder="o-teu@email" required maxlength="120" pattern=".*@.*" title="O email deve conter @.">
             </div>
             <div class="campo">
                 <label for="password">Password</label>

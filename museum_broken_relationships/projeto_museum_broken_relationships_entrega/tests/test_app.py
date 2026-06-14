@@ -90,6 +90,23 @@ class AppTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn('80 caracteres'.encode(), response.data)
 
+    def test_registration_email_only_requires_at_sign(self):
+        accepted = self.client.post('/register', data={
+            'username': 'email_simples',
+            'email': 'nome@dominio',
+            'password': 'abcdef'
+        })
+        self.assertEqual(accepted.status_code, 302)
+
+        self.client.get('/logout')
+        rejected = self.client.post('/register', data={
+            'username': 'email_invalido',
+            'email': 'separador-em-falta',
+            'password': 'abcdef'
+        })
+        self.assertEqual(rejected.status_code, 200)
+        self.assertIn(b'O email deve conter @.', rejected.data)
+
     def test_login_and_logout(self):
         self.register()
         self.assertEqual(self.client.get('/logout').status_code, 302)

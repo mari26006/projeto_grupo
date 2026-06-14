@@ -63,7 +63,7 @@ Cada utilizador possui quatro slots fixos, associados aos seguintes espaços:
 
 Cada espaço possui três momentos principais apresentados sequencialmente. Uma resposta positiva permite avançar para o momento seguinte depois da recolha. Uma resposta negativa reduz o Amor-Próprio e obriga o utilizador a repetir o mesmo momento.
 
-Antes de utilizar um espaço, o jogador paga um custo em Lágrimas e aguarda o respetivo tempo de preparação. Cada decisão custa uma Lágrima. Ao recolher uma resposta correta, o jogador recupera duas Lágrimas.
+Antes de utilizar um espaço, o jogador paga um custo em Lágrimas e aguarda 1 minuto de preparação. Cada decisão custa uma Lágrima e inicia uma tarefa com duração de 5 minutos. Ao recolher uma resposta correta, o jogador recupera duas Lágrimas.
 
 ### 3.3 Momento Bónus
 
@@ -145,7 +145,7 @@ O código inclui ainda uma atualização simples do esquema para adicionar os ca
 
 ### 5.3 Autenticação e Passwords
 
-O registo valida se o username e o email estão preenchidos, se a password possui pelo menos seis caracteres e se o username ou email já existem.
+O registo valida se o username e o email estão preenchidos, se o email contém `@`, se a password possui pelo menos seis caracteres e se o username ou email já existem.
 
 As novas passwords são protegidas com `pbkdf2_sha256`, através da biblioteca Passlib. O sistema também reconhece hashes antigos em formato SHA-256 hexadecimal. Após um login válido com um hash antigo, a password é automaticamente convertida para `pbkdf2_sha256`.
 
@@ -190,7 +190,7 @@ O frontend também consulta `/api/estado` a cada 15 segundos. Este polling permi
 
 ### 6.3 Temporizadores
 
-Os espaços possuem temporizador de preparação e cada tarefa possui atualmente uma duração curta adequada à demonstração. Quando uma decisão é submetida:
+Os espaços possuem um temporizador de preparação de 1 minuto e cada tarefa possui uma duração de 5 minutos, respeitando os intervalos recomendados no guião. Quando uma decisão é submetida:
 
 1. O backend calcula imediatamente o impacto no Amor-Próprio;
 2. O backend guarda a data e hora de conclusão em `tarefa_fim`;
@@ -274,7 +274,7 @@ Existem, no entanto, limitações que devem ser consideradas numa versão de pro
 - Existe uma chave secreta de desenvolvimento como valor de fallback quando a variável de ambiente não é definida;
 - Não existe proteção CSRF nos formulários e pedidos da API;
 - Não existe limitação de tentativas de login;
-- Os tempos curtos utilizados facilitam a demonstração, mas devem ser configuráveis numa versão de produção.
+- Os tempos podem ser tornados configuráveis numa versão futura.
 
 ## 11. Limitações e Trabalho Futuro
 
@@ -285,7 +285,7 @@ Como evolução do projeto, seria importante:
 - Implementar proteção CSRF;
 - Alterar o reinício do jogo para uma rota POST;
 - Aumentar a cobertura dos testes automatizados;
-- Melhorar a validação do formato de email;
+- Implementar uma validação de email mais completa, caso seja necessária;
 - Criar tratamento global e registo de erros;
 - Adicionar acessibilidade e testes em diferentes browsers e tamanhos de ecrã.
 

@@ -21,7 +21,8 @@ Se o Amor-Próprio ou as Lágrimas chegarem a zero, o jogador pode reiniciar a j
 - Passwords protegidas com Passlib;
 - Dois recursos: Amor-Próprio e Lágrimas;
 - Quatro espaços com custos e tempos de preparação;
-- Decisões, tarefas temporizadas e recolha manual;
+- Preparação dos espaços com duração de 1 minuto;
+- Tarefas com duração de 5 minutos e recolha manual;
 - Estados emocionais baseados no Amor-Próprio;
 - Leaderboard dos dez melhores utilizadores;
 - Tema claro e escuro persistente;
