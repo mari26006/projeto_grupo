@@ -1,125 +1,75 @@
 # Museum of Broken Relationships
 
-Projeto final de Desenvolvimento de Aplicações Web do Instituto Politécnico de Setúbal — ESCE, ano letivo 2025/2026.
+Projeto final de Desenvolvimento de Aplicações Web.
 
-## Sobre o jogo
+## Tema
 
-O *Museum of Broken Relationships* é um jogo web de gestão emocional inspirado na recuperação após o fim de uma relação.
-
-Cada utilizador começa com:
-
-- `4` pontos de Amor-Próprio;
-- `60` Lágrimas.
-
-As Lágrimas são utilizadas para preparar espaços e tomar decisões. As decisões alteram o Amor-Próprio e respostas corretas permitem recuperar Lágrimas. O objetivo é concluir os quatro espaços de cura e alcançar 100 pontos de Amor-Próprio.
-
-Se o Amor-Próprio ou as Lágrimas chegarem a zero, o jogador pode reiniciar a jornada.
+O jogo é sobre recuperar de uma relação terminada. O jogador gere espaços de cura dentro do museu e tenta aumentar o Amor-Próprio.
 
 ## Funcionalidades
 
-- Registo, login, logout e sessões com Flask-Login;
-- Passwords protegidas com Passlib;
-- Dois recursos: Amor-Próprio e Lágrimas;
-- Quatro espaços com custos e tempos de preparação;
-- Preparação dos espaços com duração de 1 minuto;
-- Tarefas com duração de 5 minutos e recolha manual;
-- Estados emocionais baseados no Amor-Próprio;
-- Leaderboard dos dez melhores utilizadores;
-- Tema claro e escuro persistente;
-- Layout responsivo para desktop, tablet e mobile;
-- API JSON validada no servidor;
-- Testes automatizados dos fluxos principais.
-
-## Arquitetura MVC
-
-- **Model:** `models/game_model.py` — base de dados, validações e regras do jogo.
-- **View:** `templates/` e `static/` — templates Jinja, CSS, JavaScript e imagens.
-- **Controller:** `controllers/main_controller.py` — rotas, autenticação e respostas HTTP/JSON.
-- **Inicialização:** `app.py` — configuração da aplicação e registo do Controller.
+- Registo com username, email e password
+- Login e logout
+- Sessões com Flask-Login
+- Base de dados SQLite
+- Dois recursos principais:
+  - Amor-Próprio
+  - Lágrimas
+- Quatro espaços/construções:
+  - Baú das Recordações Físicas
+  - Arquivo Digital
+  - A Mente e os Pensamentos
+  - Novos Começos
+- Cada espaço tem custo e tempo de preparação
+- Cada espaço tem tarefas/decisões
+- As tarefas demoram tempo
+- O jogador recolhe manualmente a tarefa concluída
+- Dashboard com recursos, slots, leaderboard e histórico
+- JavaScript com Fetch API para comunicar com o backend
+- Tema claro/escuro guardado com localStorage
 
 ## Tecnologias
 
-- Python 3;
-- Flask 3.1;
-- Flask-Login;
-- SQLite;
-- Passlib;
-- HTML5, Jinja, CSS3 e JavaScript.
+- Python
+- Flask
+- Flask-Login
+- SQLite
+- Passlib
+- HTML
+- CSS
+- JavaScript
 
-## Instalação
+## Como executar
 
-```bash
-cd museum_broken_relationships
-python -m venv venv
-```
-
-Ativar o ambiente virtual no Windows:
-
-```bash
-venv\Scripts\activate
-```
-
-Ativar no macOS ou Linux:
-
-```bash
-source venv/bin/activate
-```
-
-Instalar e executar:
+Instalar dependências:
 
 ```bash
 pip install -r requirements.txt
+```
+
+Executar:
+
+```bash
 python app.py
 ```
 
-A aplicação fica disponível em:
+Abrir no browser:
 
 ```text
-http://127.0.0.1:5000
+http://127.0.0.1:8080
 ```
 
-A base de dados `game.db` é criada automaticamente na primeira execução.
+## Estrutura MVC
 
-## Testes
+- Model: `models/game_model.py`
+- View: `templates/` e `static/`
+- Controller: `controllers/main_controller.py`
+- Entrada da aplicação: `app.py`
 
-```bash
-python -m unittest discover -s tests -v
-```
+## Entregáveis
 
-## Estrutura
-
-```text
-museum_broken_relationships/
-|-- app.py
-|-- requirements.txt
-|-- README.md
-|-- api_documentacao.md
-|-- base_dados.sql
-|-- controllers/
-|   `-- main_controller.py
-|-- models/
-|   `-- game_model.py
-|-- templates/
-|   |-- base.html
-|   |-- index.html
-|   |-- login.html
-|   |-- register.html
-|   `-- dashboard.html
-|-- static/
-|   |-- css/style.css
-|   |-- js/jogo.js
-|   |-- js/tema.js
-|   `-- img/
-|-- tests/
-|   `-- test_app.py
-|-- RELATORIO_TECNICO_REVISTO.md
-|-- relatorio_museum_broken_relationships_alinhado.docx
-`-- relatorio_museum_broken_relationships_final.pdf
-```
-
-## Documentação
-
-- `api_documentacao.md`: rotas, parâmetros e respostas da API;
-- `base_dados.sql`: esquema da base de dados;
-- `RELATORIO_TECNICO_REVISTO.md`: versão editável do relatório;
-- `relatorio_museum_broken_relationships_final.pdf`: relatório final.
+- `README.md`
+- `api_documentacao.md`
+- `base_dados.sql`
+- `relatorio_museum_broken_relationships_final.pdf`
+- `projeto_museum_broken_relationships.zip`

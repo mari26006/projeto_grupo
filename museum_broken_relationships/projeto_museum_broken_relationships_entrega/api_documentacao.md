@@ -1,100 +1,135 @@
-# Documentação da API
+# Documentação das rotas
 
-Todas as rotas `/api/` exigem autenticação através de Flask-Login e devolvem JSON.
+## Páginas
 
-## POST `/api/construir`
+| Rota | Método | Descrição |
+|---|---|---|
+| `/` | GET | Página inicial |
+| `/register` | GET, POST | Registo de utilizador |
+| `/login` | GET, POST | Login |
+| `/logout` | GET | Logout |
+| `/dashboard` | GET | Dashboard do jogo |
+| `/construir` | POST | Preparar um espaço |
+| `/dar-ordem` | POST | Iniciar uma tarefa |
+| `/recolher` | POST | Recolher uma tarefa |
+| `/reiniciar` | POST | Reiniciar o jogo quando possível |
 
-Inicia a preparação de um espaço vazio. A preparação consome Lágrimas e demora 1 minuto.
+## Rotas usadas com Fetch API
+
+### POST `/api/construir`
+
+Prepara um espaço.
+
+Pedido:
 
 ```json
-{"slot": 1}
+{
+  "slot": 1
+}
 ```
 
-Resposta de sucesso:
-
-```json
-{"sucesso": true, "lagrimas": 57, "estado_emocional": "💔 Desolado"}
-```
-
-## POST `/api/dar_ordem`
-
-Submete uma decisão. Cada decisão custa uma Lágrima e inicia uma tarefa de 5 minutos.
-
-```json
-{"slot": 1, "tarefa_id": "roupas", "opcao_id": "B"}
-```
-
-Resposta de sucesso:
+Resposta:
 
 ```json
 {
   "sucesso": true,
-  "amor_proprio": 12,
-  "lagrimas": 56,
-  "delta": "+8",
-  "novo_valor": 12,
-  "estado_emocional": "💔 Desolado",
-  "mensagem": "Resultado da decisão",
-  "resposta_correta": true
+  "mensagem": "Espaço em preparação.",
+  "amor_proprio": 4,
+  "lagrimas": 57,
+  "estado_emocional": "Desolado"
 }
 ```
 
-## POST `/api/verificar_tarefa`
+### POST `/api/dar_ordem`
 
-Verifica o temporizador de preparação ou de uma tarefa.
+Inicia uma tarefa/decisão.
 
-```json
-{"slot": 1}
-```
-
-Enquanto decorre:
+Pedido:
 
 ```json
-{"sucesso": false, "segundos_restantes": 3}
+{
+  "slot": 1,
+  "tarefa_id": "roupas",
+  "opcao_id": "B"
+}
 ```
 
-Quando termina:
+Resposta:
 
 ```json
-{"sucesso": true, "estado": "ativo"}
+{
+  "sucesso": true,
+  "mensagem": "Tarefa iniciada.",
+  "amor_proprio": 12,
+  "lagrimas": 56,
+  "estado_emocional": "Desolado"
+}
 ```
 
-O estado final é `ativo` para uma preparação e `concluida` para uma tarefa.
+### POST `/api/recolher`
 
-## POST `/api/recolher`
+Recolhe uma tarefa concluída.
 
-Recolhe uma tarefa concluída. Respostas corretas permitem avançar e recuperam duas Lágrimas.
+Pedido:
 
 ```json
-{"slot": 1}
+{
+  "slot": 1
+}
 ```
 
-## GET `/api/estado`
+Resposta:
 
-Devolve os recursos e o estado atual dos slots.
+```json
+{
+  "sucesso": true,
+  "mensagem": "Tarefa recolhida com sucesso.",
+  "amor_proprio": 12,
+  "lagrimas": 58,
+  "estado_emocional": "Desolado"
+}
+```
+
+### GET `/api/estado`
+
+Devolve o estado atual dos recursos e slots.
+
+Resposta:
 
 ```json
 {
   "amor_proprio": 12,
   "lagrimas": 58,
-  "estado_emocional": "💔 Desolado",
-  "slots": []
+  "estado_emocional": "Desolado",
+  "slots": [
+    {
+      "numero": 1,
+      "estado": "processando",
+      "segundos_restantes": 120,
+      "total_segundos": 300
+    }
+  ]
 }
 ```
 
-## Erros
+### POST `/api/verificar_tarefa`
 
-- `400`: pedido inválido, estado incompatível ou recursos insuficientes;
-- `401`: utilizador não autenticado;
-- `200` com `sem_recolha: true`: a tarefa ainda não pode ser recolhida.
+Verifica o estado de um slot que está a construir ou a processar uma tarefa.
 
-## Rotas de páginas e autenticação
+Pedido:
 
-| Rota | Método | Função |
-|---|---|---|
-| `/` | GET | Página inicial |
-| `/register` | GET, POST | Registo |
-| `/login` | GET, POST | Login |
-| `/logout` | GET | Logout |
-| `/dashboard` | GET | Dashboard protegido |
-| `/reiniciar` | POST | Reinicia o jogo quando o Amor-Próprio ou as Lágrimas chegam a zero |
+```json
+{
+  "slot": 1
+}
+```
+
+Resposta:
+
+```json
+{
+  "estado": "construindo",
+  "segundos_restantes": 59,
+  "mensagem": ""
+}
+```

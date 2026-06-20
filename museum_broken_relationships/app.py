@@ -1,47 +1,53 @@
 import os
 
-from flask import Flask, jsonify, redirect, request, url_for
+from flask import Flask
 from flask_login import LoginManager
 
-from controllers import main_controller
-from models.game_model import get_login_user, init_db
+import settings
+from controllers import main_controller as views
+from models.game_model import Database, get_user
 
 
 login_manager = LoginManager()
-login_manager.login_view = 'main.login'
+login_manager.login_view = "login"
 
 
 @login_manager.user_loader
 def load_user(user_id):
-    return get_login_user(user_id)
+    return get_user(user_id)
 
 
-@login_manager.unauthorized_handler
-def unauthorized():
-    if request.path.startswith('/api/'):
-        return jsonify({'erro': 'Não autenticado'}), 401
-    return redirect(url_for('main.login', next=request.url))
-
-
-def create_app(test_config=None):
-    """Cria e configura a aplicação Flask."""
+def create_app():
     app = Flask(__name__)
-    app.config.from_mapping(
-        SECRET_KEY=os.environ.get('SECRET_KEY', 'daw2026secretkey'),
-        DEBUG=os.environ.get('FLASK_DEBUG') == '1',
-    )
+    app.config.from_object(settings)
 
-    if test_config:
-        app.config.update(test_config)
+    models_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
+    db = Database(os.path.join(models_dir, "game.sqlite"))
+    app.config["db"] = db
 
     login_manager.init_app(app)
-    app.register_blueprint(main_controller)
-    init_db()
+
+    app.add_url_rule("/", view_func=views.index)
+    app.add_url_rule("/register", view_func=views.register, methods=["GET", "POST"])
+    app.add_url_rule("/login", view_func=views.login, methods=["GET", "POST"])
+    app.add_url_rule("/logout", view_func=views.logout)
+    app.add_url_rule("/dashboard", view_func=views.dashboard)
+    app.add_url_rule("/construir", view_func=views.construir, methods=["POST"])
+    app.add_url_rule("/dar-ordem", view_func=views.dar_ordem, methods=["POST"])
+    app.add_url_rule("/recolher", view_func=views.recolher, methods=["POST"])
+    app.add_url_rule("/reiniciar", view_func=views.reiniciar, methods=["POST"])
+    app.add_url_rule("/api/construir", view_func=views.api_construir, methods=["POST"])
+    app.add_url_rule("/api/dar_ordem", view_func=views.api_dar_ordem, methods=["POST"])
+    app.add_url_rule("/api/recolher", view_func=views.api_recolher, methods=["POST"])
+    app.add_url_rule("/api/estado", view_func=views.api_estado)
+    app.add_url_rule("/api/verificar_tarefa", view_func=views.api_verificar_tarefa, methods=["POST"])
+
     return app
 
 
 app = create_app()
 
 
-if __name__ == '__main__':
-    app.run()
+if __name__ == "__main__":
+    port = app.config.get("PORT", 8080)
+    app.run(host="0.0.0.0", port=port)

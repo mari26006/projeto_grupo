@@ -788,14 +788,14 @@ body.dark-mode .modal {
 .painel-lateral {
     display: flex;
     flex-direction: column;
-    gap: 22px;
+    gap: 12px;
 }
 
 .painel-secao {
     background: rgba(255,255,255,0.88);
-    border-radius: 14px;
+    border-radius: 10px;
     border: 1px solid rgba(255,255,255,0.75);
-    padding: 18px;
+    padding: 12px;
     box-shadow: 0 28px 70px rgba(41, 22, 26, 0.12);
     width: 100%;
     overflow: hidden;
@@ -808,8 +808,8 @@ body.dark-mode .modal {
 
 .painel-secao h3 {
     font-family: 'Playfair Display', serif;
-    font-size: 1.1rem;
-    margin-bottom: 14px;
+    font-size: 0.95rem;
+    margin-bottom: 8px;
 }
 
 /* Leaderboard */
@@ -817,19 +817,19 @@ body.dark-mode .modal {
     width: 100%;
     table-layout: fixed;
     border-collapse: collapse;
-    font-size: 0.84rem;
+    font-size: 0.75rem;
 }
 
 .leaderboard th {
     text-align: left;
     color: var(--text-secondary);
     font-weight: 700;
-    padding: 4px 8px 8px;
+    padding: 3px 4px 5px;
     border-bottom: 2px solid var(--cinza-claro);
 }
 
 .leaderboard td {
-    padding: 8px;
+    padding: 6px 4px;
     border-bottom: 1px solid var(--cinza-claro);
     vertical-align: top;
 }
@@ -842,18 +842,18 @@ body.dark-mode .modal {
 
 .leaderboard th:nth-child(1),
 .leaderboard td:nth-child(1) {
-    width: 36px;
+    width: 26px;
 }
 
 .leaderboard th:nth-child(3),
 .leaderboard td:nth-child(3) {
-    width: 58px;
+    width: 40px;
     text-align: center;
 }
 
 .leaderboard th:nth-child(4),
 .leaderboard td:nth-child(4) {
-    width: 118px;
+    width: 82px;
     white-space: nowrap;
 }
 
@@ -864,6 +864,24 @@ body.dark-mode .modal {
 
 .dark-mode .linha-proprio {
     background: rgba(240, 140, 175, 0.16);
+}
+
+.historico-lista {
+    list-style: none;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.historico-lista li {
+    margin-bottom: 6px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--cinza-claro);
+    line-height: 1.25;
+}
+
+.historico-lista li:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
 }
 
 /* ===========================

@@ -24,11 +24,11 @@
         <div class="nav-user">
             <span>{{ user.username }}</span>
             {% if user.amor_proprio == 0 or user.lagrimas == 0 %}
-            <form method="POST" action="{{ url_for('main.reiniciar') }}">
+            <form method="POST" action="{{ url_for('reiniciar') }}">
                 <button type="submit" class="btn-logout">Reiniciar</button>
             </form>
             {% endif %}
-            <a href="{{ url_for('main.logout') }}" class="btn-logout">Logout</a>
+            <a href="{{ url_for('logout') }}" class="btn-logout">Logout</a>
         </div>
     </nav>
 </header>
@@ -136,6 +136,16 @@
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+        <div class="painel-secao">
+            <h3>Histórico</h3>
+            <ul class="historico-lista">
+                {% for item in historico %}
+                <li>{{ item.texto }}</li>
+                {% else %}
+                <li>Ainda não existem ações recentes.</li>
+                {% endfor %}
+            </ul>
         </div>
         <button id="theme-toggle" class="btn theme-toggle-inline" type="button" aria-label="Alternar modo escuro">Modo escuro</button>
     </aside>

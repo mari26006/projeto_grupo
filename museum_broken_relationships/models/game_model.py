@@ -1,11 +1,11 @@
-import sqlite3
-import os
+import sqlite3 as dbapi2
 from datetime import datetime
+
+from flask import current_app
 from flask_login import UserMixin
 from passlib.hash import pbkdf2_sha256 as hasher
-from passlib.hash import hex_sha256
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'game.db')
+
 AMOR_PROPRIO_INICIAL = 4
 LAGRIMAS_INICIAIS = 60
 CUSTO_DECISAO = 1
@@ -15,552 +15,469 @@ TEMPO_TAREFA_SEGUNDOS = 300
 
 
 class User(UserMixin):
-    """Representa o utilizador autenticado para o Flask-Login."""
+    def __init__(self, user_id, username, email, password, amor_proprio, lagrimas):
+        self.id = user_id
+        self.username = username
+        self.email = email
+        self.password = password
+        self.amor_proprio = amor_proprio
+        self.lagrimas = lagrimas
+
+
+def get_user(user_id):
+    db = current_app.config["db"]
+    return db.get_user_by_id(user_id)
 
-    def __init__(self, row):
-        self.id = row['id']
-        self.username = row['username']
-        self.email = row['email']
-        self.amor_proprio = row['amor_proprio']
-        self.lagrimas = row['lagrimas']
-        self.created_at = row['created_at']
-
-# =====================
-# BASE DE DADOS
-# =====================
-
-def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute('PRAGMA foreign_keys = ON')
-    return conn
-
-def init_db():
-    conn = get_db()
-    c = conn.cursor()
-    c.executescript('''
-        CREATE TABLE IF NOT EXISTS user (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            email TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            amor_proprio INTEGER DEFAULT 4,
-            lagrimas INTEGER DEFAULT 60,
-            publicacoes_disponivel INTEGER DEFAULT 0,
-            publicacoes_resolvido INTEGER DEFAULT 0,
-            silenciou_ex INTEGER DEFAULT 0,
-            created_at TEXT DEFAULT (datetime('now'))
-        );
-
-        CREATE TABLE IF NOT EXISTS slot (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            numero INTEGER NOT NULL,
-            estado TEXT DEFAULT 'vazio',
-            tipo TEXT,
-            etapa INTEGER DEFAULT 0,
-            construcao_fim TEXT,
-            tarefa_fim TEXT,
-            tarefa_nome TEXT,
-            tarefa_correta INTEGER DEFAULT 0,
-            FOREIGN KEY (user_id) REFERENCES user(id)
-        );
-
-    ''')
-    conn.commit()
-
-    # Ajuste de esquema para bases de dados existentes
-    c.execute("PRAGMA table_info(slot)")
-    columns = [row['name'] for row in c.fetchall()]
-    if 'etapa' not in columns:
-        c.execute('ALTER TABLE slot ADD COLUMN etapa INTEGER DEFAULT 0')
-        conn.commit()
-
-    if 'tarefa_correta' not in columns:
-        c.execute('ALTER TABLE slot ADD COLUMN tarefa_correta INTEGER DEFAULT 0')
-        conn.commit()
-
-    if 'construcao_fim' not in columns:
-        c.execute('ALTER TABLE slot ADD COLUMN construcao_fim TEXT')
-        conn.commit()
-
-    c.execute("PRAGMA table_info(user)")
-    user_columns = [row['name'] for row in c.fetchall()]
-    if 'lagrimas' not in user_columns:
-        c.execute(f'ALTER TABLE user ADD COLUMN lagrimas INTEGER DEFAULT {LAGRIMAS_INICIAIS}')
-        conn.commit()
-    if 'publicacoes_disponivel' not in user_columns:
-        c.execute('ALTER TABLE user ADD COLUMN publicacoes_disponivel INTEGER DEFAULT 0')
-        conn.commit()
-    if 'publicacoes_resolvido' not in user_columns:
-        c.execute('ALTER TABLE user ADD COLUMN publicacoes_resolvido INTEGER DEFAULT 0')
-        conn.commit()
-    if 'silenciou_ex' not in user_columns:
-        c.execute('ALTER TABLE user ADD COLUMN silenciou_ex INTEGER DEFAULT 0')
-        conn.commit()
-
-    conn.close()
-
-
-def user_exists(conn, username, email):
-    return conn.execute(
-        'SELECT id FROM user WHERE username = ? OR email = ?',
-        (username, email)
-    ).fetchone()
-
-
-def create_user(conn, username, email, password_hash):
-    try:
-        cursor = conn.execute(
-            'INSERT INTO user (username, email, password, amor_proprio, lagrimas) VALUES (?, ?, ?, ?, ?)',
-            (username, email, password_hash, AMOR_PROPRIO_INICIAL, LAGRIMAS_INICIAIS)
-        )
-    except sqlite3.IntegrityError:
-        conn.rollback()
-        return None
-    user_id = cursor.lastrowid
-    for numero, tipo in SLOT_TIPOS.items():
-        conn.execute(
-            'INSERT INTO slot (user_id, numero, tipo, etapa) VALUES (?, ?, ?, ?)',
-            (user_id, numero, tipo, 0)
-        )
-    conn.commit()
-    return user_id
-
-
-def get_user_by_username(conn, username):
-    return conn.execute('SELECT * FROM user WHERE username = ?', (username,)).fetchone()
-
-
-def get_user_by_id(conn, user_id):
-    return conn.execute('SELECT * FROM user WHERE id = ?', (user_id,)).fetchone()
-
-
-def get_login_user(user_id):
-    conn = get_db()
-    row = get_user_by_id(conn, user_id)
-    conn.close()
-    return User(row) if row else None
-
-
-def update_user_password(conn, user_id, password_hash):
-    conn.execute('UPDATE user SET password = ? WHERE id = ?', (password_hash, user_id))
-    conn.commit()
-
-
-def get_slots_by_user(conn, user_id):
-    return conn.execute(
-        'SELECT * FROM slot WHERE user_id = ? ORDER BY numero',
-        (user_id,)
-    ).fetchall()
-
-
-def get_top_users(conn, limit=10):
-    return conn.execute(
-        'SELECT * FROM user ORDER BY amor_proprio DESC LIMIT ?',
-        (limit,)
-    ).fetchall()
-
-
-def get_slot_by_user_and_number(conn, user_id, numero):
-    return conn.execute(
-        'SELECT * FROM slot WHERE user_id = ? AND numero = ?',
-        (user_id, numero)
-    ).fetchone()
-
-
-def get_slot_by_id(conn, slot_id):
-    return conn.execute('SELECT * FROM slot WHERE id = ?', (slot_id,)).fetchone()
-
-
-def start_slot_build(conn, slot_id, user_id, tears_after_cost, build_end):
-    conn.execute('UPDATE user SET lagrimas = ? WHERE id = ?', (tears_after_cost, user_id))
-    conn.execute(
-        'UPDATE slot SET estado = ?, etapa = ?, construcao_fim = ?, tarefa_correta = ? WHERE id = ?',
-        ('construindo', 1, build_end, 0, slot_id)
-    )
-    conn.commit()
-
-
-def finish_slot_build(conn, slot_id):
-    conn.execute(
-        'UPDATE slot SET estado = ?, construcao_fim = NULL WHERE id = ?',
-        ('ativo', slot_id)
-    )
-    conn.commit()
-
-
-def start_slot_task(conn, slot_id, user_id, novo_amor, novas_lagrimas, tarefa_nome, tarefa_fim, resposta_correta):
-    conn.execute(
-        'UPDATE user SET amor_proprio = ?, lagrimas = ? WHERE id = ?',
-        (novo_amor, novas_lagrimas, user_id)
-    )
-    conn.execute(
-        'UPDATE slot SET estado = ?, tarefa_nome = ?, tarefa_fim = ?, tarefa_correta = ? WHERE id = ?',
-        ('processando', tarefa_nome, tarefa_fim, 1 if resposta_correta else 0, slot_id)
-    )
-    conn.commit()
-
-
-def mark_slot_completed(conn, slot_id):
-    conn.execute('UPDATE slot SET estado = ? WHERE id = ?', ('concluida', slot_id))
-    conn.commit()
-
-
-def finalize_slot(conn, slot_id):
-    conn.execute(
-        'UPDATE slot SET estado = ?, tarefa_nome = NULL, tarefa_fim = NULL, tarefa_correta = 0 WHERE id = ?',
-        ('finalizado', slot_id)
-    )
-
-
-def advance_slot(conn, slot_id, next_stage):
-    conn.execute(
-        'UPDATE slot SET estado = ?, tarefa_nome = NULL, tarefa_fim = NULL, etapa = ?, tarefa_correta = 0 WHERE id = ?',
-        ('ativo', next_stage, slot_id)
-    )
-
-
-def retry_slot(conn, slot_id):
-    conn.execute(
-        'UPDATE slot SET estado = ?, tarefa_nome = NULL, tarefa_fim = NULL WHERE id = ?',
-        ('ativo', slot_id)
-    )
-
-
-def update_user_love(conn, user_id, amor_proprio):
-    conn.execute('UPDATE user SET amor_proprio = ? WHERE id = ?', (amor_proprio, user_id))
-
-
-def reward_tears(conn, user_id, amount):
-    conn.execute('UPDATE user SET lagrimas = lagrimas + ? WHERE id = ?', (amount, user_id))
-
-
-def unlock_publications(conn, user_id, silenced_ex):
-    conn.execute(
-        'UPDATE user SET publicacoes_disponivel = 1, silenciou_ex = ? WHERE id = ?',
-        (1 if silenced_ex else 0, user_id)
-    )
-    conn.commit()
-
-
-def resolve_publications(conn, user_id):
-    conn.execute('UPDATE user SET publicacoes_resolvido = 1 WHERE id = ?', (user_id,))
-
-
-def reset_user_game(conn, user_id):
-    conn.execute(
-        '''UPDATE user
-           SET amor_proprio = ?, lagrimas = ?, publicacoes_disponivel = 0,
-               publicacoes_resolvido = 0, silenciou_ex = 0
-           WHERE id = ?''',
-        (AMOR_PROPRIO_INICIAL, LAGRIMAS_INICIAIS, user_id)
-    )
-    conn.execute(
-        'UPDATE slot SET estado = ?, etapa = 0, construcao_fim = NULL, tarefa_fim = NULL, tarefa_nome = NULL, tarefa_correta = 0 WHERE user_id = ?',
-        ('vazio', user_id)
-    )
-    conn.commit()
-
-
-def hash_password(password):
-    return hasher.hash(password)
-
-def check_password(password, hashed):
-    if not isinstance(hashed, str):
-        return False
-    try:
-        if len(hashed) == 64:
-            return hex_sha256.verify(password, hashed)
-        return hasher.verify(password, hashed)
-    except (ValueError, TypeError):
-        return False
-
-def password_uses_old_hash(hashed):
-    return len(hashed) == 64
-
-def validate_register_form(form):
-    data = {}
-    errors = []
-
-    username = form.get('username', '').strip()
-    email = form.get('email', '').strip()
-    password = form.get('password', '')
-
-    if len(username) == 0:
-        errors.append('O username não pode estar vazio.')
-    elif len(username) > 80:
-        errors.append('O username não pode ter mais de 80 caracteres.')
-    else:
-        data['username'] = username
-
-    if '@' not in email:
-        errors.append('O email deve conter @.')
-    elif len(email) > 120:
-        errors.append('O email não pode ter mais de 120 caracteres.')
-    else:
-        data['email'] = email
-
-    if len(password) < 6:
-        errors.append('A password precisa de pelo menos 6 caracteres.')
-    elif len(password) > 128:
-        errors.append('A password não pode ter mais de 128 caracteres.')
-    else:
-        data['password'] = password
-
-    return data, errors
-
-def validate_login_form(form):
-    data = {}
-    errors = []
-
-    username = form.get('username', '').strip()
-    password = form.get('password', '')
-
-    if len(username) == 0:
-        errors.append('O username não pode estar vazio.')
-    else:
-        data['username'] = username
-
-    if len(password) == 0:
-        errors.append('A password não pode estar vazia.')
-    else:
-        data['password'] = password
-
-    return data, errors
-
-def str_to_dt(s):
-    if not s:
-        return None
-    try:
-        return datetime.strptime(s, '%Y-%m-%d %H:%M:%S')
-    except (TypeError, ValueError):
-        return None
 
 def get_estado_emocional(amor_proprio):
     if amor_proprio == 100:
-        return '❤️ Curado'
+        return "❤️ Curado"
     if amor_proprio >= 81:
-        return '✨ Quase Curado'
+        return "✨ Quase Curado"
     if amor_proprio >= 61:
-        return '✨ Confiante'
+        return "✨ Confiante"
     if amor_proprio >= 41:
-        return '🌱 A Recuperar'
+        return "🌱 A Recuperar"
     if amor_proprio >= 21:
-        return '🌧 A Sofrer'
-    return '💔 Desolado'
+        return "🌧 A Sofrer"
+    return "💔 Desolado"
 
-# =====================
-# DADOS DOS ESPAÇOS
-# =====================
 
-CONSTRUCOES = {
-    'bau': {
-        'nome': 'Baú das Recordações Físicas',
-        'descricao': 'Escolhas pesadas com objetos e lembranças físicas. Risco e recompensa emocional.',
-        'imagem': 'img/bau.png',
-        'custo_lagrimas': 3,
-        'tempo_construcao': TEMPO_CONSTRUCAO_SEGUNDOS
-    },
-    'arquivo': {
-        'nome': 'Arquivo Digital',
-        'descricao': 'Mensagens, fotografias e redes sociais. Cada clique tem consequência.',
-        'imagem': 'img/arquivodigital.png',
-        'custo_lagrimas': 4,
-        'tempo_construcao': TEMPO_CONSTRUCAO_SEGUNDOS
-    },
-    'mente': {
-        'nome': 'A Mente e os Pensamentos',
-        'descricao': 'Enfrenta emoções, saudades e padrões de pensamento repetitivos.',
-        'imagem': 'img/mentepensamentos.png',
-        'custo_lagrimas': 5,
-        'tempo_construcao': TEMPO_CONSTRUCAO_SEGUNDOS
-    },
-    'novos': {
-        'nome': 'Novos Começos',
-        'descricao': 'Novas experiências, amizades e pequenos passos para o futuro.',
-        'imagem': 'img/novoscomecos.png',
-        'custo_lagrimas': 6,
-        'tempo_construcao': TEMPO_CONSTRUCAO_SEGUNDOS
-    }
-}
+def str_to_dt(value):
+    if not value:
+        return None
+    try:
+        return datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        return None
 
-SLOT_TIPOS = {
-    1: 'bau',
-    2: 'arquivo',
-    3: 'mente',
-    4: 'novos'
-}
 
-def get_tipo_por_numero(numero):
-    return SLOT_TIPOS.get(numero)
+def dt_to_str(value):
+    return value.strftime("%Y-%m-%d %H:%M:%S")
 
-def garantir_tipos_slots(conn, user_id):
-    slots = conn.execute('SELECT id, numero, tipo FROM slot WHERE user_id = ?', (user_id,)).fetchall()
-    for slot in slots:
-        if not slot['tipo']:
-            tipo = get_tipo_por_numero(slot['numero'])
-            if tipo:
-                conn.execute('UPDATE slot SET tipo = ? WHERE id = ?', (tipo, slot['id']))
-    conn.commit()
-
-def todos_slots_finalizados(conn, user_id):
-    slots = conn.execute('SELECT estado FROM slot WHERE user_id = ?', (user_id,)).fetchall()
-    return len(slots) == len(SLOT_TIPOS) and all(slot['estado'] == 'finalizado' for slot in slots)
-
-def limitar_amor_antes_da_cura(conn, user_id, amor_proprio):
-    amor_limitado = max(0, min(100, amor_proprio))
-    if amor_limitado != amor_proprio:
-        conn.execute('UPDATE user SET amor_proprio = ? WHERE id = ?', (amor_limitado, user_id))
-        conn.commit()
-    return amor_limitado
 
 def calcular_amor_proprio(amor_atual, amor_delta):
     return max(0, min(100, amor_atual + amor_delta))
 
+
+CONSTRUCOES = {
+    "bau": {
+        "nome": "Baú das Recordações Físicas",
+        "descricao": "Escolhas pesadas com objetos e lembranças físicas.",
+        "imagem": "img/bau.png",
+        "custo_lagrimas": 3,
+        "tempo_construcao": TEMPO_CONSTRUCAO_SEGUNDOS,
+    },
+    "arquivo": {
+        "nome": "Arquivo Digital",
+        "descricao": "Mensagens, fotografias e redes sociais.",
+        "imagem": "img/arquivodigital.png",
+        "custo_lagrimas": 4,
+        "tempo_construcao": TEMPO_CONSTRUCAO_SEGUNDOS,
+    },
+    "mente": {
+        "nome": "A Mente e os Pensamentos",
+        "descricao": "Emoções, saudades e padrões de pensamento.",
+        "imagem": "img/mentepensamentos.png",
+        "custo_lagrimas": 5,
+        "tempo_construcao": TEMPO_CONSTRUCAO_SEGUNDOS,
+    },
+    "novos": {
+        "nome": "Novos Começos",
+        "descricao": "Novas experiências, amizades e pequenos passos.",
+        "imagem": "img/novoscomecos.png",
+        "custo_lagrimas": 6,
+        "tempo_construcao": TEMPO_CONSTRUCAO_SEGUNDOS,
+    },
+}
+
+
+SLOT_TIPOS = {
+    1: "bau",
+    2: "arquivo",
+    3: "mente",
+    4: "novos",
+}
+
+
 TAREFAS = {
-    'bau': [
+    "bau": [
         {
-            'id': 'roupas',
-            'nome': 'Roupas do passado',
-            'situacao': 'Encontraste roupas antigas do/a ex no armário.',
-            'tempo': TEMPO_TAREFA_SEGUNDOS,
-            'opcoes': [
-                {'id': 'A', 'label': 'Guardar por agora e decidir depois', 'amor_delta': -5, 'mensagem': 'Mantiveste as roupas. O passado ficou mais presente no teu espaço.'},
-                {'id': 'B', 'label': 'Separar para doar ou reciclar', 'amor_delta': 8, 'mensagem': 'Separaste as roupas. Estás a criar espaço físico e emocional.'}
-            ]
+            "id": "roupas",
+            "nome": "Roupas do passado",
+            "situacao": "Encontraste roupas antigas do/a ex no armário.",
+            "tempo": TEMPO_TAREFA_SEGUNDOS,
+            "opcoes": [
+                {"id": "A", "label": "Guardar por agora e decidir depois", "amor_delta": -5, "mensagem": "Mantiveste as roupas. O passado ficou mais presente no teu espaço."},
+                {"id": "B", "label": "Separar para doar ou reciclar", "amor_delta": 8, "mensagem": "Separaste as roupas. Estás a criar espaço físico e emocional."},
+            ],
         },
         {
-            'id': 'cartas',
-            'nome': 'Cartas antigas',
-            'situacao': 'Encontraste cartas antigas do teu ex.',
-            'tempo': TEMPO_TAREFA_SEGUNDOS,
-            'opcoes': [
-                {'id': 'A', 'label': 'Voltar a ler antes de decidir', 'amor_delta': -5, 'mensagem': 'Releste as cartas. Isso reacendeu sentimentos antigos.'},
-                {'id': 'B', 'label': 'Guardar num envelope fechado', 'amor_delta': 8, 'mensagem': 'Guardaste as cartas e criaste uma distância segura entre passado e presente.'}
-            ]
+            "id": "cartas",
+            "nome": "Cartas antigas",
+            "situacao": "Encontraste cartas antigas do teu ex.",
+            "tempo": TEMPO_TAREFA_SEGUNDOS,
+            "opcoes": [
+                {"id": "A", "label": "Voltar a ler antes de decidir", "amor_delta": -5, "mensagem": "Releste as cartas. Isso reacendeu sentimentos antigos."},
+                {"id": "B", "label": "Guardar num envelope fechado", "amor_delta": 8, "mensagem": "Guardaste as cartas e criaste uma distância segura entre passado e presente."},
+            ],
         },
         {
-            'id': 'presentes',
-            'nome': 'Presentes guardados',
-            'situacao': 'Ainda tens presentes guardados do antigo relacionamento.',
-            'tempo': TEMPO_TAREFA_SEGUNDOS,
-            'opcoes': [
-                {'id': 'A', 'label': 'Manter como lembrança íntima', 'amor_delta': -5, 'mensagem': 'Mantiveste os presentes. O peso do passado ainda vibra contigo.'},
-                {'id': 'B', 'label': 'Reinventar ou doar com cuidado', 'amor_delta': 8, 'mensagem': 'Decidiste transformar os presentes. Isso abre espaço para algo novo.'}
-            ]
-        }
+            "id": "presentes",
+            "nome": "Presentes guardados",
+            "situacao": "Ainda tens presentes guardados do antigo relacionamento.",
+            "tempo": TEMPO_TAREFA_SEGUNDOS,
+            "opcoes": [
+                {"id": "A", "label": "Manter como lembrança íntima", "amor_delta": -5, "mensagem": "Mantiveste os presentes. O peso do passado ainda vibra contigo."},
+                {"id": "B", "label": "Reinventar ou doar com cuidado", "amor_delta": 8, "mensagem": "Decidiste transformar os presentes. Isso abre espaço para algo novo."},
+            ],
+        },
     ],
-    'arquivo': [
+    "arquivo": [
         {
-            'id': 'fotografias',
-            'nome': 'Fotografias antigas',
-            'situacao': 'Encontraste fotografias antigas em pastas digitais.',
-            'tempo': TEMPO_TAREFA_SEGUNDOS,
-            'opcoes': [
-                {'id': 'A', 'label': 'Deixar no álbum e revisitar mais tarde', 'amor_delta': -5, 'mensagem': 'Deixaste as fotos como estão. Ainda estás a dar espaço ao passado.'},
-                {'id': 'B', 'label': 'Mover para uma pasta privada', 'amor_delta': 8, 'mensagem': 'Organizaste as fotos num lugar protegido. Estás a construir um novo hábito.'}
-            ]
+            "id": "fotografias",
+            "nome": "Fotografias antigas",
+            "situacao": "Encontraste fotografias antigas em pastas digitais.",
+            "tempo": TEMPO_TAREFA_SEGUNDOS,
+            "opcoes": [
+                {"id": "A", "label": "Deixar no álbum e revisitar mais tarde", "amor_delta": -5, "mensagem": "Deixaste as fotos como estão. Ainda estás a dar espaço ao passado."},
+                {"id": "B", "label": "Mover para uma pasta privada", "amor_delta": 8, "mensagem": "Organizaste as fotos num lugar protegido. Estás a construir um novo hábito."},
+            ],
         },
         {
-            'id': 'mensagens',
-            'nome': 'Mensagens antigas',
-            'situacao': 'Recebeste uma mensagem antiga do/a ex.',
-            'tempo': TEMPO_TAREFA_SEGUNDOS,
-            'opcoes': [
-                {'id': 'A', 'label': 'Guardar para pensar com calma', 'amor_delta': -5, 'mensagem': 'Guardaste a mensagem. Ficaste na dúvida entre passado e futuro.'},
-                {'id': 'B', 'label': 'Apagar para proteger a tua paz', 'amor_delta': 8, 'mensagem': 'Apagaste a mensagem. Cuidaste do teu coração.'}
-            ]
+            "id": "mensagens",
+            "nome": "Mensagens antigas",
+            "situacao": "Recebeste uma mensagem antiga do/a ex.",
+            "tempo": TEMPO_TAREFA_SEGUNDOS,
+            "opcoes": [
+                {"id": "A", "label": "Guardar para pensar com calma", "amor_delta": -5, "mensagem": "Guardaste a mensagem. Ficaste na dúvida entre passado e futuro."},
+                {"id": "B", "label": "Apagar para proteger a tua paz", "amor_delta": 8, "mensagem": "Apagaste a mensagem. Cuidaste do teu coração."},
+            ],
         },
         {
-            'id': 'redes',
-            'nome': 'Redes sociais',
-            'situacao': 'Vistes o perfil do/a ex nas redes sociais.',
-            'tempo': TEMPO_TAREFA_SEGUNDOS,
-            'opcoes': [
-                {'id': 'A', 'label': 'Continuar a espreitar discretamente', 'amor_delta': -5, 'mensagem': 'Observaste o/a ex. Isso mantém-te preso/a a cenas antigas.'},
-                {'id': 'B', 'label': 'Bloquear e tentar seguir em frente', 'amor_delta': 8, 'mensagem': 'Bloqueaste o/a ex. Estás a cuidar da tua paz e do teu espaço mental.'}
-            ]
-        }
+            "id": "redes",
+            "nome": "Redes sociais",
+            "situacao": "Vistes o perfil do/a ex nas redes sociais.",
+            "tempo": TEMPO_TAREFA_SEGUNDOS,
+            "opcoes": [
+                {"id": "A", "label": "Continuar a espreitar discretamente", "amor_delta": -5, "mensagem": "Observaste o/a ex. Isso mantém-te preso/a a cenas antigas."},
+                {"id": "B", "label": "Bloquear e tentar seguir em frente", "amor_delta": 8, "mensagem": "Bloqueaste o/a ex. Estás a cuidar da tua paz e do teu espaço mental."},
+            ],
+        },
     ],
-    'mente': [
+    "mente": [
         {
-            'id': 'pensamentos',
-            'nome': 'Pensamentos repetidos',
-            'situacao': 'O mesmo pensamento sobre o relacionamento não te larga.',
-            'tempo': TEMPO_TAREFA_SEGUNDOS,
-            'opcoes': [
-                {'id': 'A', 'label': 'Permitir que ele te domine mais um pouco', 'amor_delta': -5, 'mensagem': 'Ficou mais difícil sair deste ciclo mental.'},
-                {'id': 'B', 'label': 'Anotar e redirecionar', 'amor_delta': 8, 'mensagem': 'Anotaste os pensamentos e mudaste o foco. Estás a cuidar da tua mente.'}
-            ]
+            "id": "pensamentos",
+            "nome": "Pensamentos repetidos",
+            "situacao": "O mesmo pensamento sobre o relacionamento não te larga.",
+            "tempo": TEMPO_TAREFA_SEGUNDOS,
+            "opcoes": [
+                {"id": "A", "label": "Permitir que ele te domine mais um pouco", "amor_delta": -5, "mensagem": "Ficou mais difícil sair deste ciclo mental."},
+                {"id": "B", "label": "Anotar e redirecionar", "amor_delta": 8, "mensagem": "Anotaste os pensamentos e mudaste o foco. Estás a cuidar da tua mente."},
+            ],
         },
         {
-            'id': 'autocuidado',
-            'nome': 'Autocuidado',
-            'situacao': 'Tens uma janela para fazer algo por ti hoje.',
-            'tempo': TEMPO_TAREFA_SEGUNDOS,
-            'opcoes': [
-                {'id': 'A', 'label': 'Ignorar o teu bem-estar', 'amor_delta': -5, 'mensagem': 'Ignoraste o autocuidado. O teu amor-próprio fica mais frágil.'},
-                {'id': 'B', 'label': 'Fazer algo gentil por ti', 'amor_delta': 8, 'mensagem': 'Escolheste cuidar de ti. Isso fortalece o teu amor-próprio.'}
-            ]
+            "id": "autocuidado",
+            "nome": "Autocuidado",
+            "situacao": "Tens uma janela para fazer algo por ti hoje.",
+            "tempo": TEMPO_TAREFA_SEGUNDOS,
+            "opcoes": [
+                {"id": "A", "label": "Ignorar o teu bem-estar", "amor_delta": -5, "mensagem": "Ignoraste o autocuidado. O teu amor-próprio fica mais frágil."},
+                {"id": "B", "label": "Fazer algo gentil por ti", "amor_delta": 8, "mensagem": "Escolheste cuidar de ti. Isso fortalece o teu amor-próprio."},
+            ],
         },
         {
-            'id': 'amigos',
-            'nome': 'Apoio dos amigos',
-            'situacao': 'Os teus amigos convidaram-te para sair.',
-            'tempo': TEMPO_TAREFA_SEGUNDOS,
-            'opcoes': [
-                {'id': 'A', 'label': 'Ficar em casa para te proteger', 'amor_delta': -5, 'mensagem': 'Ficaste isolado/a. Isso enfraquece a tua confiança.'},
-                {'id': 'B', 'label': 'Aceitar o convite e sair', 'amor_delta': 8, 'mensagem': 'Aceitaste o apoio. Estás a recuperar com companhia.'}
-            ]
-        }
+            "id": "amigos",
+            "nome": "Apoio dos amigos",
+            "situacao": "Os teus amigos convidaram-te para sair.",
+            "tempo": TEMPO_TAREFA_SEGUNDOS,
+            "opcoes": [
+                {"id": "A", "label": "Ficar em casa para te proteger", "amor_delta": -5, "mensagem": "Ficaste isolado/a. Isso enfraquece a tua confiança."},
+                {"id": "B", "label": "Aceitar o convite e sair", "amor_delta": 8, "mensagem": "Aceitaste o apoio. Estás a recuperar com companhia."},
+            ],
+        },
     ],
-    'novos': [
+    "novos": [
         {
-            'id': 'hobbies',
-            'nome': 'Hobbies novos',
-            'situacao': 'Encontraste um novo hobby que te desperta curiosidade.',
-            'tempo': TEMPO_TAREFA_SEGUNDOS,
-            'opcoes': [
-                {'id': 'A', 'label': 'Guardar a ideia para depois', 'amor_delta': -5, 'mensagem': 'Deixaste a oportunidade passar. Sentes-te mais parado/a.'},
-                {'id': 'B', 'label': 'Experimentar algo novo hoje', 'amor_delta': 8, 'mensagem': 'Experimentaste algo novo. Estás a abrir espaço para uma nova versão tua.'}
-            ]
+            "id": "hobbies",
+            "nome": "Hobbies novos",
+            "situacao": "Encontraste um novo hobby que te desperta curiosidade.",
+            "tempo": TEMPO_TAREFA_SEGUNDOS,
+            "opcoes": [
+                {"id": "A", "label": "Guardar a ideia para depois", "amor_delta": -5, "mensagem": "Deixaste a oportunidade passar. Sentes-te mais parado/a."},
+                {"id": "B", "label": "Experimentar algo novo hoje", "amor_delta": 8, "mensagem": "Experimentaste algo novo. Estás a abrir espaço para uma nova versão tua."},
+            ],
         },
         {
-            'id': 'exercicio',
-            'nome': 'Exercício físico',
-            'situacao': 'O teu corpo pede movimento hoje.',
-            'tempo': TEMPO_TAREFA_SEGUNDOS,
-            'opcoes': [
-                {'id': 'A', 'label': 'Ficar no sofá e adiar', 'amor_delta': -5, 'mensagem': 'Adiaste o movimento. Acabaste por te sentir mais pesado/a.'},
-                {'id': 'B', 'label': 'Mover-te com um pequeno treino', 'amor_delta': 8, 'mensagem': 'Fizeste exercício. A tua energia mudou para melhor.'}
-            ]
+            "id": "exercicio",
+            "nome": "Exercício físico",
+            "situacao": "O teu corpo pede movimento hoje.",
+            "tempo": TEMPO_TAREFA_SEGUNDOS,
+            "opcoes": [
+                {"id": "A", "label": "Ficar no sofá e adiar", "amor_delta": -5, "mensagem": "Adiaste o movimento. Acabaste por te sentir mais pesado/a."},
+                {"id": "B", "label": "Mover-te com um pequeno treino", "amor_delta": 8, "mensagem": "Fizeste exercício. A tua energia mudou para melhor."},
+            ],
         },
         {
-            'id': 'experiencias',
-            'nome': 'Novas experiências',
-            'situacao': 'Surge uma oportunidade para algo diferente.',
-            'tempo': TEMPO_TAREFA_SEGUNDOS,
-            'opcoes': [
-                {'id': 'A', 'label': 'Manter a zona de conforto', 'amor_delta': -5, 'mensagem': 'Evitar a novidade deixa-te mais estagnado/a.'},
-                {'id': 'B', 'label': 'Dizer sim e aceitar', 'amor_delta': 8, 'mensagem': 'Aceitaste a experiência. Estás a recuperar com coragem.'}
-            ]
-        }
-    ]
+            "id": "experiencias",
+            "nome": "Novas experiências",
+            "situacao": "Surge uma oportunidade para algo diferente.",
+            "tempo": TEMPO_TAREFA_SEGUNDOS,
+            "opcoes": [
+                {"id": "A", "label": "Manter a zona de conforto", "amor_delta": -5, "mensagem": "Evitar a novidade deixa-te mais estagnado/a."},
+                {"id": "B", "label": "Dizer sim e aceitar", "amor_delta": 8, "mensagem": "Aceitaste a experiência. Estás a recuperar com coragem."},
+            ],
+        },
+    ],
 }
 
-PUBLICACOES_TAREFA = {
-    'id': 'publicacoes',
-    'nome': 'Novas publicações',
-    'situacao': 'Há uma atualização do/a ex no feed que pode chegar mais tarde.',
-    'tempo': TEMPO_TAREFA_SEGUNDOS,
-    'opcoes': [
-        {'id': 'A', 'label': 'Manter distância e não ver', 'amor_delta': 8, 'correta': True, 'mensagem': 'Optaste por não ver. Protegeste a tua paz e o teu progresso.'},
-        {'id': 'B', 'label': 'Ver por curiosidade', 'amor_delta': -10, 'correta': False, 'mensagem': 'Abriste o feed e sentiste as emoções do passado.'}
-    ]
-}
 
-# =====================
-# ROTAS DE AUTENTICAÇÃO
-# =====================
+class Database:
+    def __init__(self, dbfile):
+        self.dbfile = dbfile
+        self.create_tables()
 
+    def connect(self):
+        return dbapi2.connect(self.dbfile)
+
+    def create_tables(self):
+        with self.connect() as connection:
+            cursor = connection.cursor()
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS USER (
+                    ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                    USERNAME TEXT UNIQUE NOT NULL,
+                    EMAIL TEXT UNIQUE NOT NULL,
+                    PASSWORD TEXT NOT NULL,
+                    AMOR_PROPRIO INTEGER DEFAULT 4,
+                    LAGRIMAS INTEGER DEFAULT 60
+                )
+                """
+            )
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS SLOT (
+                    ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                    USER_ID INTEGER NOT NULL,
+                    NUMERO INTEGER NOT NULL,
+                    ESTADO TEXT DEFAULT 'vazio',
+                    TIPO TEXT,
+                    ETAPA INTEGER DEFAULT 0,
+                    CONSTRUCAO_FIM TEXT,
+                    TAREFA_FIM TEXT,
+                    TAREFA_NOME TEXT,
+                    TAREFA_CORRETA INTEGER DEFAULT 0,
+                    FOREIGN KEY (USER_ID) REFERENCES USER(ID)
+                )
+                """
+            )
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS HISTORICO (
+                    ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                    USER_ID INTEGER NOT NULL,
+                    TEXTO TEXT NOT NULL,
+                    CREATED_AT TEXT DEFAULT (datetime('now')),
+                    FOREIGN KEY (USER_ID) REFERENCES USER(ID)
+                )
+                """
+            )
+            connection.commit()
+
+    def create_user(self, username, email, password):
+        with self.connect() as connection:
+            cursor = connection.cursor()
+            cursor.execute(
+                "INSERT INTO USER (USERNAME, EMAIL, PASSWORD, AMOR_PROPRIO, LAGRIMAS) VALUES (?, ?, ?, ?, ?)",
+                (username, email, hasher.hash(password), AMOR_PROPRIO_INICIAL, LAGRIMAS_INICIAIS),
+            )
+            user_id = cursor.lastrowid
+            for numero, tipo in SLOT_TIPOS.items():
+                cursor.execute(
+                    "INSERT INTO SLOT (USER_ID, NUMERO, TIPO, ETAPA) VALUES (?, ?, ?, ?)",
+                    (user_id, numero, tipo, 0),
+                )
+            connection.commit()
+            return user_id
+
+    def add_history(self, user_id, texto):
+        with self.connect() as connection:
+            cursor = connection.cursor()
+            cursor.execute("INSERT INTO HISTORICO (USER_ID, TEXTO) VALUES (?, ?)", (user_id, texto))
+            connection.commit()
+
+    def get_history(self, user_id):
+        with self.connect() as connection:
+            cursor = connection.cursor()
+            cursor.execute(
+                "SELECT TEXTO, CREATED_AT FROM HISTORICO WHERE USER_ID = ? ORDER BY ID DESC LIMIT 4",
+                (user_id,),
+            )
+            return [{"texto": row[0], "created_at": row[1]} for row in cursor.fetchall()]
+
+    def username_or_email_exists(self, username, email):
+        with self.connect() as connection:
+            cursor = connection.cursor()
+            cursor.execute("SELECT ID FROM USER WHERE USERNAME = ? OR EMAIL = ?", (username, email))
+            return cursor.fetchone() is not None
+
+    def get_user_by_id(self, user_id):
+        with self.connect() as connection:
+            cursor = connection.cursor()
+            cursor.execute(
+                "SELECT ID, USERNAME, EMAIL, PASSWORD, AMOR_PROPRIO, LAGRIMAS FROM USER WHERE ID = ?",
+                (user_id,),
+            )
+            row = cursor.fetchone()
+            if row:
+                return User(row[0], row[1], row[2], row[3], row[4], row[5])
+            return None
+
+    def get_user_by_username(self, username):
+        with self.connect() as connection:
+            cursor = connection.cursor()
+            cursor.execute(
+                "SELECT ID, USERNAME, EMAIL, PASSWORD, AMOR_PROPRIO, LAGRIMAS FROM USER WHERE USERNAME = ?",
+                (username,),
+            )
+            row = cursor.fetchone()
+            if row:
+                return User(row[0], row[1], row[2], row[3], row[4], row[5])
+            return None
+
+    def get_slots_by_user(self, user_id):
+        with self.connect() as connection:
+            cursor = connection.cursor()
+            cursor.execute(
+                """
+                SELECT ID, USER_ID, NUMERO, ESTADO, TIPO, ETAPA, CONSTRUCAO_FIM, TAREFA_FIM, TAREFA_NOME, TAREFA_CORRETA
+                FROM SLOT
+                WHERE USER_ID = ?
+                ORDER BY NUMERO
+                """,
+                (user_id,),
+            )
+            return [self.slot_from_row(row) for row in cursor.fetchall()]
+
+    def get_slot_by_user_and_number(self, user_id, numero):
+        with self.connect() as connection:
+            cursor = connection.cursor()
+            cursor.execute(
+                """
+                SELECT ID, USER_ID, NUMERO, ESTADO, TIPO, ETAPA, CONSTRUCAO_FIM, TAREFA_FIM, TAREFA_NOME, TAREFA_CORRETA
+                FROM SLOT
+                WHERE USER_ID = ? AND NUMERO = ?
+                """,
+                (user_id, numero),
+            )
+            row = cursor.fetchone()
+            return self.slot_from_row(row) if row else None
+
+    def get_top_users(self):
+        with self.connect() as connection:
+            cursor = connection.cursor()
+            cursor.execute("SELECT ID, USERNAME, AMOR_PROPRIO FROM USER ORDER BY AMOR_PROPRIO DESC LIMIT 10")
+            return [{"id": row[0], "username": row[1], "amor_proprio": row[2]} for row in cursor.fetchall()]
+
+    def start_slot_build(self, slot_id, user_id, lagrimas, fim):
+        with self.connect() as connection:
+            cursor = connection.cursor()
+            cursor.execute("UPDATE USER SET LAGRIMAS = ? WHERE ID = ?", (lagrimas, user_id))
+            cursor.execute(
+                "UPDATE SLOT SET ESTADO = ?, ETAPA = ?, CONSTRUCAO_FIM = ?, TAREFA_CORRETA = ? WHERE ID = ?",
+                ("construindo", 1, fim, 0, slot_id),
+            )
+            connection.commit()
+
+    def finish_slot_build(self, slot_id):
+        with self.connect() as connection:
+            cursor = connection.cursor()
+            cursor.execute("UPDATE SLOT SET ESTADO = ?, CONSTRUCAO_FIM = NULL WHERE ID = ?", ("ativo", slot_id))
+            connection.commit()
+
+    def start_slot_task(self, slot_id, user_id, amor, lagrimas, tarefa_nome, tarefa_fim, correta):
+        with self.connect() as connection:
+            cursor = connection.cursor()
+            cursor.execute("UPDATE USER SET AMOR_PROPRIO = ?, LAGRIMAS = ? WHERE ID = ?", (amor, lagrimas, user_id))
+            cursor.execute(
+                "UPDATE SLOT SET ESTADO = ?, TAREFA_NOME = ?, TAREFA_FIM = ?, TAREFA_CORRETA = ? WHERE ID = ?",
+                ("processando", tarefa_nome, tarefa_fim, 1 if correta else 0, slot_id),
+            )
+            connection.commit()
+
+    def mark_slot_completed(self, slot_id):
+        with self.connect() as connection:
+            cursor = connection.cursor()
+            cursor.execute("UPDATE SLOT SET ESTADO = ? WHERE ID = ?", ("concluida", slot_id))
+            connection.commit()
+
+    def advance_slot(self, slot_id, etapa):
+        with self.connect() as connection:
+            cursor = connection.cursor()
+            cursor.execute(
+                "UPDATE SLOT SET ESTADO = ?, TAREFA_NOME = NULL, TAREFA_FIM = NULL, ETAPA = ?, TAREFA_CORRETA = 0 WHERE ID = ?",
+                ("ativo", etapa, slot_id),
+            )
+            connection.commit()
+
+    def retry_slot(self, slot_id):
+        with self.connect() as connection:
+            cursor = connection.cursor()
+            cursor.execute(
+                "UPDATE SLOT SET ESTADO = ?, TAREFA_NOME = NULL, TAREFA_FIM = NULL, TAREFA_CORRETA = 0 WHERE ID = ?",
+                ("ativo", slot_id),
+            )
+            connection.commit()
+
+    def finalize_slot(self, slot_id):
+        with self.connect() as connection:
+            cursor = connection.cursor()
+            cursor.execute(
+                "UPDATE SLOT SET ESTADO = ?, TAREFA_NOME = NULL, TAREFA_FIM = NULL, TAREFA_CORRETA = 0 WHERE ID = ?",
+                ("finalizado", slot_id),
+            )
+            connection.commit()
+
+    def update_user_resources(self, user_id, amor, lagrimas):
+        with self.connect() as connection:
+            cursor = connection.cursor()
+            cursor.execute("UPDATE USER SET AMOR_PROPRIO = ?, LAGRIMAS = ? WHERE ID = ?", (amor, lagrimas, user_id))
+            connection.commit()
+
+    def reward_tears(self, user_id, amount):
+        with self.connect() as connection:
+            cursor = connection.cursor()
+            cursor.execute("UPDATE USER SET LAGRIMAS = LAGRIMAS + ? WHERE ID = ?", (amount, user_id))
+            connection.commit()
+
+    def reset_user_game(self, user_id):
+        with self.connect() as connection:
+            cursor = connection.cursor()
+            cursor.execute(
+                "UPDATE USER SET AMOR_PROPRIO = ?, LAGRIMAS = ? WHERE ID = ?",
+                (AMOR_PROPRIO_INICIAL, LAGRIMAS_INICIAIS, user_id),
+            )
+            cursor.execute(
+                "UPDATE SLOT SET ESTADO = ?, ETAPA = 0, CONSTRUCAO_FIM = NULL, TAREFA_FIM = NULL, TAREFA_NOME = NULL, TAREFA_CORRETA = 0 WHERE USER_ID = ?",
+                ("vazio", user_id),
+            )
+            connection.commit()
+
+    def all_slots_finished(self, user_id):
+        slots = self.get_slots_by_user(user_id)
+        return len(slots) == len(SLOT_TIPOS) and all(slot["estado"] == "finalizado" for slot in slots)
+
+    def slot_from_row(self, row):
+        return {
+            "id": row[0],
+            "user_id": row[1],
+            "numero": row[2],
+            "estado": row[3],
+            "tipo": row[4],
+            "etapa": row[5],
+            "construcao_fim": row[6],
+            "tarefa_fim": row[7],
+            "tarefa_nome": row[8],
+            "tarefa_correta": row[9],
+        }
