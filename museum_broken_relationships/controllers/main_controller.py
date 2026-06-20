@@ -5,10 +5,10 @@ from flask_login import current_user, login_required, login_user, logout_user
 from passlib.hash import pbkdf2_sha256 as hasher
 
 from models.game_model import (
-    BONUS_LAGRIMAS_RESPOSTA_CORRETA,
-    CONSTRUCOES,
-    CUSTO_DECISAO,
-    TAREFAS,
+    bonus_lagrimas_resposta_correta,
+    construcoes,
+    custo_decisao,
+    tarefas,
     calcular_amor_proprio,
     dt_to_str,
     get_estado_emocional,
@@ -159,10 +159,10 @@ def dashboard():
         user=user,
         user_estado=get_estado_emocional(user.amor_proprio),
         slots=slots,
-        construcoes=CONSTRUCOES,
-        tarefas=TAREFAS,
+        construcoes=construcoes,
+        tarefas=tarefas,
         top_users=top_users,
-        custo_decisao=CUSTO_DECISAO,
+        custo_decisao=custo_decisao,
         historico=historico,
     )
 
@@ -175,7 +175,7 @@ def construir_slot(user_id, slot_num):
     if slot is None or slot["estado"] != "vazio":
         return False, "Slot inválido."
 
-    construcao = CONSTRUCOES[slot["tipo"]]
+    construcao = construcoes[slot["tipo"]]
     custo = construcao["custo_lagrimas"]
     if user.lagrimas < custo:
         return False, "Lágrimas insuficientes."
@@ -200,7 +200,7 @@ def iniciar_tarefa(user_id, slot_num, tarefa_id, opcao_id):
     if slot is None or slot["estado"] != "ativo":
         return False, "Slot inválido.", None
 
-    tarefas_tipo = TAREFAS.get(slot["tipo"], [])
+    tarefas_tipo = tarefas.get(slot["tipo"], [])
     etapa = slot["etapa"] or 1
     if etapa < 1 or etapa > len(tarefas_tipo):
         return False, "Momento inválido.", None
@@ -218,7 +218,7 @@ def iniciar_tarefa(user_id, slot_num, tarefa_id, opcao_id):
     if opcao is None:
         return False, "Opção inválida.", None
 
-    if user.lagrimas < CUSTO_DECISAO:
+    if user.lagrimas < custo_decisao:
         return False, "Lágrimas insuficientes.", None
 
     resposta_correta = opcao["amor_delta"] > 0
@@ -228,7 +228,7 @@ def iniciar_tarefa(user_id, slot_num, tarefa_id, opcao_id):
         slot["id"],
         user.id,
         novo_amor,
-        user.lagrimas - CUSTO_DECISAO,
+        user.lagrimas - custo_decisao,
         f"{tarefa['nome']} - {opcao['label']}",
         fim,
         resposta_correta,
@@ -236,7 +236,7 @@ def iniciar_tarefa(user_id, slot_num, tarefa_id, opcao_id):
     db.add_history(user.id, "Escolheste: " + opcao["label"] + ".")
     dados = {
         "amor_proprio": novo_amor,
-        "lagrimas": user.lagrimas - CUSTO_DECISAO,
+        "lagrimas": user.lagrimas - custo_decisao,
         "estado_emocional": get_estado_emocional(novo_amor),
         "mensagem": opcao["mensagem"],
         "delta": ("+" if opcao["amor_delta"] > 0 else "") + str(opcao["amor_delta"]),
@@ -265,11 +265,11 @@ def recolher_slot(user_id, slot_num):
     if slot is None or slot["estado"] != "concluida":
         return False, "Ainda não há nada para recolher.", None
 
-    tarefas_tipo = TAREFAS.get(slot["tipo"], [])
+    tarefas_tipo = tarefas.get(slot["tipo"], [])
     proxima_etapa = (slot["etapa"] or 1) + 1
 
     if slot["tarefa_correta"] == 1:
-        db.reward_tears(user.id, BONUS_LAGRIMAS_RESPOSTA_CORRETA)
+        db.reward_tears(user.id, bonus_lagrimas_resposta_correta)
         if proxima_etapa > len(tarefas_tipo):
             db.finalize_slot(slot["id"])
             db.add_history(user.id, "Concluíste um espaço.")
@@ -326,7 +326,7 @@ def api_construir():
     ok, mensagem = construir_slot(current_user.id, obter_numero_slot(dados.get("slot", 0)))
     user = current_app.config["db"].get_user_by_id(current_user.id)
     if not ok:
-        return jsonify({"erro": mensagem})
+        return jsonify({"sucesso": False, "erro": mensagem}), 400
     return jsonify({
         "sucesso": ok,
         "mensagem": mensagem,
@@ -346,7 +346,7 @@ def api_dar_ordem():
         dados_pedido.get("opcao_id", ""),
     )
     if not ok:
-        return jsonify({"erro": mensagem})
+        return jsonify({"sucesso": False, "erro": mensagem}), 400
     if dados_resposta is None:
         dados_resposta = {}
     dados_resposta["sucesso"] = ok
@@ -359,7 +359,7 @@ def api_recolher():
     dados_json = request.get_json() or {}
     ok, mensagem, dados = recolher_slot(current_user.id, obter_numero_slot(dados_json.get("slot", 0)))
     if not ok:
-        return jsonify({"sem_recolha": True, "mensagem": mensagem})
+        return jsonify({"sucesso": False, "erro": mensagem, "mensagem": mensagem}), 400
     if dados is None:
         dados = {}
     dados["sucesso"] = ok
@@ -377,7 +377,7 @@ def api_estado():
     for slot in db.get_slots_by_user(current_user.id):
         total = 0
         if slot["estado"] == "construindo":
-            total = CONSTRUCOES[slot["tipo"]]["tempo_construcao"]
+            total = construcoes[slot["tipo"]]["tempo_construcao"]
         elif slot["estado"] == "processando":
             total = 300
 
@@ -405,7 +405,7 @@ def api_verificar_tarefa():
     slot = db.get_slot_by_user_and_number(current_user.id, slot_num)
 
     if slot is None:
-        return jsonify({"erro": "Slot inválido."})
+        return jsonify({"sucesso": False, "erro": "Slot invalido."}), 400
 
     mensagem = ""
     if slot["estado"] == "ativo":

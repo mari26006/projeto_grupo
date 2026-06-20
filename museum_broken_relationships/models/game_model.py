@@ -6,12 +6,12 @@ from flask_login import UserMixin
 from passlib.hash import pbkdf2_sha256 as hasher
 
 
-AMOR_PROPRIO_INICIAL = 4
-LAGRIMAS_INICIAIS = 60
-CUSTO_DECISAO = 1
-BONUS_LAGRIMAS_RESPOSTA_CORRETA = 2
-TEMPO_CONSTRUCAO_SEGUNDOS = 60
-TEMPO_TAREFA_SEGUNDOS = 300
+amor_proprio_inicial = 4
+lagrimas_iniciais = 60
+custo_decisao = 1
+bonus_lagrimas_resposta_correta = 2
+tempo_construcao_segundos = 60
+tempo_tarefa_segundos = 300
 
 
 class User(UserMixin):
@@ -60,34 +60,34 @@ def calcular_amor_proprio(amor_atual, amor_delta):
     return max(0, min(100, amor_atual + amor_delta))
 
 
-CONSTRUCOES = {
+construcoes = {
     "bau": {
         "nome": "Baú das Recordações Físicas",
         "descricao": "Escolhas pesadas com objetos e lembranças físicas.",
         "imagem": "img/bau.png",
         "custo_lagrimas": 3,
-        "tempo_construcao": TEMPO_CONSTRUCAO_SEGUNDOS,
+        "tempo_construcao": tempo_construcao_segundos,
     },
     "arquivo": {
         "nome": "Arquivo Digital",
         "descricao": "Mensagens, fotografias e redes sociais.",
         "imagem": "img/arquivodigital.png",
         "custo_lagrimas": 4,
-        "tempo_construcao": TEMPO_CONSTRUCAO_SEGUNDOS,
+        "tempo_construcao": tempo_construcao_segundos,
     },
     "mente": {
         "nome": "A Mente e os Pensamentos",
         "descricao": "Emoções, saudades e padrões de pensamento.",
         "imagem": "img/mentepensamentos.png",
         "custo_lagrimas": 5,
-        "tempo_construcao": TEMPO_CONSTRUCAO_SEGUNDOS,
+        "tempo_construcao": tempo_construcao_segundos,
     },
     "novos": {
         "nome": "Novos Começos",
         "descricao": "Novas experiências, amizades e pequenos passos.",
         "imagem": "img/novoscomecos.png",
         "custo_lagrimas": 6,
-        "tempo_construcao": TEMPO_CONSTRUCAO_SEGUNDOS,
+        "tempo_construcao": tempo_construcao_segundos,
     },
 }
 
@@ -100,13 +100,13 @@ SLOT_TIPOS = {
 }
 
 
-TAREFAS = {
+tarefas = {
     "bau": [
         {
             "id": "roupas",
             "nome": "Roupas do passado",
             "situacao": "Encontraste roupas antigas do/a ex no armário.",
-            "tempo": TEMPO_TAREFA_SEGUNDOS,
+            "tempo": tempo_tarefa_segundos,
             "opcoes": [
                 {"id": "A", "label": "Guardar por agora e decidir depois", "amor_delta": -5, "mensagem": "Mantiveste as roupas. O passado ficou mais presente no teu espaço."},
                 {"id": "B", "label": "Separar para doar ou reciclar", "amor_delta": 8, "mensagem": "Separaste as roupas. Estás a criar espaço físico e emocional."},
@@ -116,7 +116,7 @@ TAREFAS = {
             "id": "cartas",
             "nome": "Cartas antigas",
             "situacao": "Encontraste cartas antigas do teu ex.",
-            "tempo": TEMPO_TAREFA_SEGUNDOS,
+            "tempo": tempo_tarefa_segundos,
             "opcoes": [
                 {"id": "A", "label": "Voltar a ler antes de decidir", "amor_delta": -5, "mensagem": "Releste as cartas. Isso reacendeu sentimentos antigos."},
                 {"id": "B", "label": "Guardar num envelope fechado", "amor_delta": 8, "mensagem": "Guardaste as cartas e criaste uma distância segura entre passado e presente."},
@@ -126,7 +126,7 @@ TAREFAS = {
             "id": "presentes",
             "nome": "Presentes guardados",
             "situacao": "Ainda tens presentes guardados do antigo relacionamento.",
-            "tempo": TEMPO_TAREFA_SEGUNDOS,
+            "tempo": tempo_tarefa_segundos,
             "opcoes": [
                 {"id": "A", "label": "Manter como lembrança íntima", "amor_delta": -5, "mensagem": "Mantiveste os presentes. O peso do passado ainda vibra contigo."},
                 {"id": "B", "label": "Reinventar ou doar com cuidado", "amor_delta": 8, "mensagem": "Decidiste transformar os presentes. Isso abre espaço para algo novo."},
@@ -138,7 +138,7 @@ TAREFAS = {
             "id": "fotografias",
             "nome": "Fotografias antigas",
             "situacao": "Encontraste fotografias antigas em pastas digitais.",
-            "tempo": TEMPO_TAREFA_SEGUNDOS,
+            "tempo": tempo_tarefa_segundos,
             "opcoes": [
                 {"id": "A", "label": "Deixar no álbum e revisitar mais tarde", "amor_delta": -5, "mensagem": "Deixaste as fotos como estão. Ainda estás a dar espaço ao passado."},
                 {"id": "B", "label": "Mover para uma pasta privada", "amor_delta": 8, "mensagem": "Organizaste as fotos num lugar protegido. Estás a construir um novo hábito."},
@@ -148,7 +148,7 @@ TAREFAS = {
             "id": "mensagens",
             "nome": "Mensagens antigas",
             "situacao": "Recebeste uma mensagem antiga do/a ex.",
-            "tempo": TEMPO_TAREFA_SEGUNDOS,
+            "tempo": tempo_tarefa_segundos,
             "opcoes": [
                 {"id": "A", "label": "Guardar para pensar com calma", "amor_delta": -5, "mensagem": "Guardaste a mensagem. Ficaste na dúvida entre passado e futuro."},
                 {"id": "B", "label": "Apagar para proteger a tua paz", "amor_delta": 8, "mensagem": "Apagaste a mensagem. Cuidaste do teu coração."},
@@ -158,7 +158,7 @@ TAREFAS = {
             "id": "redes",
             "nome": "Redes sociais",
             "situacao": "Vistes o perfil do/a ex nas redes sociais.",
-            "tempo": TEMPO_TAREFA_SEGUNDOS,
+            "tempo": tempo_tarefa_segundos,
             "opcoes": [
                 {"id": "A", "label": "Continuar a espreitar discretamente", "amor_delta": -5, "mensagem": "Observaste o/a ex. Isso mantém-te preso/a a cenas antigas."},
                 {"id": "B", "label": "Bloquear e tentar seguir em frente", "amor_delta": 8, "mensagem": "Bloqueaste o/a ex. Estás a cuidar da tua paz e do teu espaço mental."},
@@ -170,7 +170,7 @@ TAREFAS = {
             "id": "pensamentos",
             "nome": "Pensamentos repetidos",
             "situacao": "O mesmo pensamento sobre o relacionamento não te larga.",
-            "tempo": TEMPO_TAREFA_SEGUNDOS,
+            "tempo": tempo_tarefa_segundos,
             "opcoes": [
                 {"id": "A", "label": "Permitir que ele te domine mais um pouco", "amor_delta": -5, "mensagem": "Ficou mais difícil sair deste ciclo mental."},
                 {"id": "B", "label": "Anotar e redirecionar", "amor_delta": 8, "mensagem": "Anotaste os pensamentos e mudaste o foco. Estás a cuidar da tua mente."},
@@ -180,7 +180,7 @@ TAREFAS = {
             "id": "autocuidado",
             "nome": "Autocuidado",
             "situacao": "Tens uma janela para fazer algo por ti hoje.",
-            "tempo": TEMPO_TAREFA_SEGUNDOS,
+            "tempo": tempo_tarefa_segundos,
             "opcoes": [
                 {"id": "A", "label": "Ignorar o teu bem-estar", "amor_delta": -5, "mensagem": "Ignoraste o autocuidado. O teu amor-próprio fica mais frágil."},
                 {"id": "B", "label": "Fazer algo gentil por ti", "amor_delta": 8, "mensagem": "Escolheste cuidar de ti. Isso fortalece o teu amor-próprio."},
@@ -190,7 +190,7 @@ TAREFAS = {
             "id": "amigos",
             "nome": "Apoio dos amigos",
             "situacao": "Os teus amigos convidaram-te para sair.",
-            "tempo": TEMPO_TAREFA_SEGUNDOS,
+            "tempo": tempo_tarefa_segundos,
             "opcoes": [
                 {"id": "A", "label": "Ficar em casa para te proteger", "amor_delta": -5, "mensagem": "Ficaste isolado/a. Isso enfraquece a tua confiança."},
                 {"id": "B", "label": "Aceitar o convite e sair", "amor_delta": 8, "mensagem": "Aceitaste o apoio. Estás a recuperar com companhia."},
@@ -202,7 +202,7 @@ TAREFAS = {
             "id": "hobbies",
             "nome": "Hobbies novos",
             "situacao": "Encontraste um novo hobby que te desperta curiosidade.",
-            "tempo": TEMPO_TAREFA_SEGUNDOS,
+            "tempo": tempo_tarefa_segundos,
             "opcoes": [
                 {"id": "A", "label": "Guardar a ideia para depois", "amor_delta": -5, "mensagem": "Deixaste a oportunidade passar. Sentes-te mais parado/a."},
                 {"id": "B", "label": "Experimentar algo novo hoje", "amor_delta": 8, "mensagem": "Experimentaste algo novo. Estás a abrir espaço para uma nova versão tua."},
@@ -212,7 +212,7 @@ TAREFAS = {
             "id": "exercicio",
             "nome": "Exercício físico",
             "situacao": "O teu corpo pede movimento hoje.",
-            "tempo": TEMPO_TAREFA_SEGUNDOS,
+            "tempo": tempo_tarefa_segundos,
             "opcoes": [
                 {"id": "A", "label": "Ficar no sofá e adiar", "amor_delta": -5, "mensagem": "Adiaste o movimento. Acabaste por te sentir mais pesado/a."},
                 {"id": "B", "label": "Mover-te com um pequeno treino", "amor_delta": 8, "mensagem": "Fizeste exercício. A tua energia mudou para melhor."},
@@ -222,7 +222,7 @@ TAREFAS = {
             "id": "experiencias",
             "nome": "Novas experiências",
             "situacao": "Surge uma oportunidade para algo diferente.",
-            "tempo": TEMPO_TAREFA_SEGUNDOS,
+            "tempo": tempo_tarefa_segundos,
             "opcoes": [
                 {"id": "A", "label": "Manter a zona de conforto", "amor_delta": -5, "mensagem": "Evitar a novidade deixa-te mais estagnado/a."},
                 {"id": "B", "label": "Dizer sim e aceitar", "amor_delta": 8, "mensagem": "Aceitaste a experiência. Estás a recuperar com coragem."},
@@ -290,7 +290,7 @@ class Database:
             cursor = connection.cursor()
             cursor.execute(
                 "INSERT INTO USER (USERNAME, EMAIL, PASSWORD, AMOR_PROPRIO, LAGRIMAS) VALUES (?, ?, ?, ?, ?)",
-                (username, email, hasher.hash(password), AMOR_PROPRIO_INICIAL, LAGRIMAS_INICIAIS),
+                (username, email, hasher.hash(password), amor_proprio_inicial, lagrimas_iniciais),
             )
             user_id = cursor.lastrowid
             for numero, tipo in SLOT_TIPOS.items():
@@ -456,7 +456,7 @@ class Database:
             cursor = connection.cursor()
             cursor.execute(
                 "UPDATE USER SET AMOR_PROPRIO = ?, LAGRIMAS = ? WHERE ID = ?",
-                (AMOR_PROPRIO_INICIAL, LAGRIMAS_INICIAIS, user_id),
+                (amor_proprio_inicial, lagrimas_iniciais, user_id),
             )
             cursor.execute(
                 "UPDATE SLOT SET ESTADO = ?, ETAPA = 0, CONSTRUCAO_FIM = NULL, TAREFA_FIM = NULL, TAREFA_NOME = NULL, TAREFA_CORRETA = 0 WHERE USER_ID = ?",

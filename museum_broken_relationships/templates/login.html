@@ -15,11 +15,11 @@
         <form method="POST" action="{{ url_for('login') }}">
             <div class="campo">
                 <label for="username">Username</label>
-                <input id="username" type="text" name="username" value="{{ values.get('username', '') if values else '' }}" placeholder="O teu nome de guerra" required>
+                <input id="username" type="text" name="username" value="{{ values.get('username', '') if values else '' }}" placeholder="O teu nome de guerra" required autocomplete="username">
             </div>
             <div class="campo">
                 <label for="password">Password</label>
-                <input id="password" type="password" name="password" placeholder="A tua password" required>
+                <input id="password" type="password" name="password" placeholder="A tua password" required autocomplete="current-password">
             </div>
             <button type="submit" class="btn btn-principal btn-full">Entrar no Museu</button>
         </form>

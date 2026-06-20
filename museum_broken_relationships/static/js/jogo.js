@@ -20,8 +20,8 @@ function formatarDuracao(segundos) {
 function abrirMenuTarefas(numSlot, tipo) {
     let slotEl = document.getElementById('slot-' + numSlot);
     let etapa = 1;
-    if (slotEl && slotEl.dataset.etapa) {
-        etapa = parseInt(slotEl.dataset.etapa, 10);
+    if (slotEl && slotEl.getAttribute('data-etapa')) {
+        etapa = parseInt(slotEl.getAttribute('data-etapa'), 10);
     }
 
     let tarefas = TAREFAS_DATA[tipo] || [];
@@ -64,19 +64,35 @@ function abrirMenuTarefas(numSlot, tipo) {
 }
 
 // Trata os cliques nos botões que possuem o atributo data-action
-document.addEventListener('click', function(e) {
-    let el = e.target;
-    while (el && el !== document && (!el.dataset || !el.dataset.action)) {
-        el = el.parentNode;
+function obterElementoComAcao(target) {
+    if (!target || target === document) {
+        return null;
     }
 
+    if (target.closest) {
+        return target.closest('[data-action]');
+    }
+
+    let el = target;
+    while (el && el !== document) {
+        if (el.getAttribute && el.getAttribute('data-action')) {
+            return el;
+        }
+        el = el.parentNode;
+    }
+    return null;
+}
+
+document.addEventListener('click', function(e) {
+    let el = obterElementoComAcao(e.target);
     if (!el) {
         return;
     }
 
-    let action = el.dataset.action;
-    let slot = el.dataset.slot ? parseInt(el.dataset.slot) : null;
-    let tipo = el.dataset.tipo || null;
+    let action = el.getAttribute('data-action');
+    let slotAttr = el.getAttribute('data-slot');
+    let slot = slotAttr ? parseInt(slotAttr, 10) : null;
+    let tipo = el.getAttribute('data-tipo') || null;
     let tarefaId = el.getAttribute('data-tarefa-id');
 
     if (action === 'abrirMenuTarefas' && slot && tipo) {
@@ -92,7 +108,7 @@ document.addEventListener('click', function(e) {
     } else if (action === 'fecharPopupCura') {
         fecharPopupCura();
     } else if (action === 'darOrdem' && slot && tarefaId) {
-        let opcaoId = el.dataset.opcaoId || el.getAttribute('data-opcao-id');
+        let opcaoId = el.getAttribute('data-opcao-id');
         darOrdem(slot, tarefaId, opcaoId);
     }
 });
@@ -164,6 +180,18 @@ function atualizarRecursos(amor, estado, lagrimas) {
 }
 
 // ---- INICIAR ESPAÇO ----
+
+function inicializarBarraAmor() {
+    let elBar = document.getElementById('amor-progresso');
+    if (!elBar) {
+        return;
+    }
+
+    let amor = parseInt(elBar.getAttribute('data-amor-proprio'), 10);
+    if (!isNaN(amor)) {
+        atualizarRecursos(amor, null, null);
+    }
+}
 
 function construir(numSlot) {
     fecharModal();
@@ -243,6 +271,11 @@ function recolher(numSlot) {
     })
     .then(function(res) { return res.json(); })
     .then(function(data) {
+        if (data.erro) {
+            mostrarNotificacao('Erro: ' + data.erro);
+            restaurarBotaoRecolher(botao);
+            return;
+        }
         if (data.sem_recolha) {
             mostrarNotificacao('A tarefa ainda está a terminar. Tenta novamente.');
             restaurarBotaoRecolher(botao);
@@ -287,8 +320,8 @@ function iniciarContadores() {
     let slots = document.querySelectorAll('.slot');
     for (let i = 0; i < slots.length; i++) {
         let slotEl = slots[i];
-        let estado = slotEl.dataset.estado;
-        let numSlot = parseInt(slotEl.dataset.numero);
+        let estado = slotEl.getAttribute('data-estado');
+        let numSlot = parseInt(slotEl.getAttribute('data-numero'), 10);
 
         if (estado === 'processando' || estado === 'construindo') {
             // Pede ao servidor quantos segundos restam
@@ -363,7 +396,7 @@ function pollingEstado() {
         fetch('/api/estado')
         .then(function(res) { return res.json(); })
         .then(function(data) {
-            if (data.erro) {
+            if (data.erro || !Array.isArray(data.slots)) {
                 return;
             }
 
@@ -376,7 +409,7 @@ function pollingEstado() {
                 if (!slotEl) {
                     return;
                 }
-                let estadoAtual = slotEl.dataset.estado;
+                let estadoAtual = slotEl.getAttribute('data-estado');
 
                 if (estadoAtual !== s.estado) {
                     // O estado mudou, recarregar a página
@@ -400,6 +433,7 @@ document.addEventListener('DOMContentLoaded', function() {
             TAREFAS_DATA = {};
         }
     }
+    inicializarBarraAmor();
     iniciarContadores();
     pollingEstado();
 });

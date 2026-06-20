@@ -11,7 +11,7 @@
                     <strong id="amor-valor">{{ user.amor_proprio }}</strong>/100
                 </div>
                 <div class="barra-progresso amor-bar">
-                    <div class="barra-fill" id="amor-progresso" style="width: {{ user.amor_proprio }}%"></div>
+                    <div class="barra-fill" id="amor-progresso" data-amor-proprio="{{ user.amor_proprio }}"></div>
                 </div>
                 <div class="estado-emocional" id="estado-emocional">{{ user_estado }}</div>
             </div>
