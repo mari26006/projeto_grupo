@@ -172,11 +172,17 @@ function atualizarRecursos(amor, estado, lagrimas) {
         elBar.style.width = Math.max(0, Math.min(100, amor)) + '%';
     }
     if (elEstado && estado) {
-        elEstado.textContent = estado;
+        elEstado.innerHTML = estado;
     }
     if (elLagrimas && lagrimas !== null && lagrimas !== undefined) {
         elLagrimas.textContent = lagrimas;
     }
+}
+
+function textoSemHtml(valor) {
+    let temp = document.createElement('div');
+    temp.innerHTML = valor || '';
+    return temp.textContent || temp.innerText || '';
 }
 
 // ---- INICIAR ESPAÇO ----
@@ -241,9 +247,10 @@ function darOrdem(numSlot, tarefaId, opcaoId) {
                 deltaMessage = '<i class="fa-solid fa-heart" style="color: rgb(202, 46, 84);"></i> Amor-Próprio ' + data.delta;
             }
             mostrarNotificacao(deltaMessage + '<br>' + data.mensagem + '<br> Novo valor: ' + data.novo_valor + '/100');
-            if (data.estado_emocional && oldEstado && data.estado_emocional !== oldEstado) {
+            let novoEstadoTexto = textoSemHtml(data.estado_emocional);
+            if (novoEstadoTexto && oldEstado && novoEstadoTexto !== oldEstado) {
                 setTimeout(function() {
-                    mostrarNotificacao('<i class="fa-solid fa-medal" style="color: rgb(200, 169, 38);"></i> Estado emocional mudou: ' + oldEstado + ' → ' + data.estado_emocional);
+                    mostrarNotificacao('<i class="fa-solid fa-medal" style="color: rgb(200, 169, 38);"></i> Estado emocional mudou: ' + oldEstado + ' → ' + novoEstadoTexto);
                 }, 1200);
             }
             setTimeout(function() { location.reload(); }, TEMPO_RECARREGAR_APOS_MENSAGEM_MS);
@@ -290,9 +297,10 @@ function recolher(numSlot) {
             atualizarRecursos(data.amor_proprio, data.estado_emocional, data.lagrimas);
             mostrarPopupCura(data.mostrar_popup_cura);
             mostrarNotificacao(data.mensagem || '<i class="fa-solid fa-trophy" style="color: rgb(204, 165, 79);"></i> Tarefa concluída!');
-            if (data.estado_emocional && oldEstado && data.estado_emocional !== oldEstado) {
+            let novoEstadoTexto = textoSemHtml(data.estado_emocional);
+            if (novoEstadoTexto && oldEstado && novoEstadoTexto !== oldEstado) {
                 setTimeout(function() {
-                    mostrarNotificacao('<i class="fa-solid fa-trophy" style="color: rgb(204, 165, 79);"></i> Novo Estado Desbloqueado! ' + oldEstado + ' → ' + data.estado_emocional);
+                    mostrarNotificacao('<i class="fa-solid fa-trophy" style="color: rgb(204, 165, 79);"></i> Novo Estado Desbloqueado! ' + oldEstado + ' → ' + novoEstadoTexto);
                 }, 1200);
             }
             if (!data.mostrar_popup_cura) {
