@@ -43,7 +43,7 @@ function abrirMenuTarefas(numSlot, tipo) {
             '<p class="modal-momento">Momento ' + etapa + '</p>' +
             '<p>' + tarefa.situacao + '</p>' +
             '<p class="modal-pergunta">O que pretendes fazer?</p>' +
-            '<p class="texto-custo">💧 1 Lágrima · ⏱ ' + formatarDuracao(tarefa.tempo) + '</p>' +
+            '<p class="texto-custo"><i class="fa-solid fa-droplet" style="color: rgb(98, 195, 233);"></i> 1 Lágrima · <i class="fa-solid fa-stopwatch" style="color: rgb(80, 79, 79);"></i> ' + formatarDuracao(tarefa.tempo) + '</p>' +
         '</div>';
 
     for (let i = 0; i < tarefa.opcoes.length; i++) {
@@ -196,7 +196,7 @@ function inicializarBarraAmor() {
 function construir(numSlot) {
     fecharModal();
     if (!numSlot) {
-        mostrarNotificacao('❌ Slot inválido para construir.');
+        mostrarNotificacao('<i class="fa-solid fa-x" style="color: rgb(203, 14, 55);"></i> Slot inválido para construir.');
         return;
     }
     fetch('/api/construir', {
@@ -207,15 +207,15 @@ function construir(numSlot) {
     .then(function(res) { return res.json(); })
     .then(function(data) {
         if (data.erro) {
-            mostrarNotificacao('❌ ' + data.erro);
+            mostrarNotificacao('<i class="fa-solid fa-x" style="color: rgb(203, 14, 55);"></i> ' + data.erro);
         } else {
             atualizarRecursos(null, data.estado_emocional, data.lagrimas);
-            mostrarNotificacao('✨ A preparar o espaço...');
+            mostrarNotificacao('<wa-icon name="star" style="color: rgb(226, 196, 83);"></wa-icon> A preparar o espaço...');
             setTimeout(function() { location.reload(); }, 500);
         }
     })
     .catch(function(err) {
-        mostrarNotificacao('❌ Erro de ligação ao servidor.');
+        mostrarNotificacao('<i class="fa-solid fa-x" style="color: rgb(203, 14, 55);"></i> Erro de ligação ao servidor.');
     });
 }
 
@@ -233,24 +233,24 @@ function darOrdem(numSlot, tarefaId, opcaoId) {
     .then(function(res) { return res.json(); })
     .then(function(data) {
         if (data.erro) {
-            mostrarNotificacao('❌ ' + data.erro);
+            mostrarNotificacao('<i class="fa-solid fa-x" style="color: rgb(203, 14, 55);"></i> ' + data.erro);
         } else {
             atualizarRecursos(data.amor_proprio, data.estado_emocional, data.lagrimas);
-            let deltaMessage = '💔 Amor-Próprio ' + data.delta;
+            let deltaMessage = '<i class="fa-solid fa-heart-crack" style="color: rgb(202, 46, 84);"></i> Amor-Próprio ' + data.delta;
             if (data.delta && data.delta.startsWith('+')) {
-                deltaMessage = '❤️ Amor-Próprio ' + data.delta;
+                deltaMessage = '<i class="fa-solid fa-heart" style="color: rgb(202, 46, 84);"></i> Amor-Próprio ' + data.delta;
             }
             mostrarNotificacao(deltaMessage + '<br>' + data.mensagem + '<br> Novo valor: ' + data.novo_valor + '/100');
             if (data.estado_emocional && oldEstado && data.estado_emocional !== oldEstado) {
                 setTimeout(function() {
-                    mostrarNotificacao('🎉 Estado emocional mudou: ' + oldEstado + ' → ' + data.estado_emocional);
+                    mostrarNotificacao('<i class="fa-solid fa-medal" style="color: rgb(200, 169, 38);"></i> Estado emocional mudou: ' + oldEstado + ' → ' + data.estado_emocional);
                 }, 1200);
             }
             setTimeout(function() { location.reload(); }, TEMPO_RECARREGAR_APOS_MENSAGEM_MS);
         }
     })
     .catch(function(err) {
-        mostrarNotificacao('❌ Erro de ligação ao servidor.');
+        mostrarNotificacao('<i class="fa-solid fa-x" style="color: rgb(203, 14, 55);"></i> Erro de ligação ao servidor.');
     });
 }
 
@@ -282,17 +282,17 @@ function recolher(numSlot) {
             return;
         }
         if (data.erro) {
-            mostrarNotificacao('❌ ' + data.erro);
+            mostrarNotificacao('<i class="fa-solid fa-x" style="color: rgb(203, 14, 55);"></i> ' + data.erro);
             restaurarBotaoRecolher(botao);
         } else {
             let estadoEl = document.getElementById('estado-emocional');
             let oldEstado = estadoEl ? estadoEl.textContent : '';
             atualizarRecursos(data.amor_proprio, data.estado_emocional, data.lagrimas);
             mostrarPopupCura(data.mostrar_popup_cura);
-            mostrarNotificacao(data.mensagem || '🎉 Tarefa concluída!');
+            mostrarNotificacao(data.mensagem || '<i class="fa-solid fa-trophy" style="color: rgb(204, 165, 79);"></i> Tarefa concluída!');
             if (data.estado_emocional && oldEstado && data.estado_emocional !== oldEstado) {
                 setTimeout(function() {
-                    mostrarNotificacao('🎉 Novo Estado Desbloqueado! ' + oldEstado + ' → ' + data.estado_emocional);
+                    mostrarNotificacao('<i class="fa-solid fa-trophy" style="color: rgb(204, 165, 79);"></i> Novo Estado Desbloqueado! ' + oldEstado + ' → ' + data.estado_emocional);
                 }, 1200);
             }
             if (!data.mostrar_popup_cura) {
@@ -301,7 +301,7 @@ function recolher(numSlot) {
         }
     })
     .catch(function(err) {
-        mostrarNotificacao('❌ Erro de ligação ao servidor.');
+        mostrarNotificacao('<i class="fa-solid fa-x" style="color: rgb(203, 14, 55);"></i> Erro de ligação ao servidor.');
         restaurarBotaoRecolher(botao);
     });
 }
@@ -309,7 +309,7 @@ function recolher(numSlot) {
 function restaurarBotaoRecolher(botao) {
     if (botao) {
         botao.disabled = false;
-        botao.textContent = 'Tentar seguir em Frente ✨';
+        botao.innerHTML = 'Tentar seguir em Frente <wa-icon name="star" style="color: rgb(226, 196, 83);"></wa-icon>';
     }
 }
 
@@ -334,7 +334,7 @@ function iniciarContadores() {
             .then(function(res) { return res.json(); })
             .then(function(data) {
                 if (data.estado === 'concluida' || data.estado === 'ativo') {
-                    mostrarNotificacao(data.mensagem || '✨ Processo concluído!');
+                    mostrarNotificacao(data.mensagem || '<wa-icon name="star" style="color: rgb(226, 196, 83);"></wa-icon> Processo concluído!');
                     setTimeout(function() { location.reload(); }, 900);
                     return;
                 }

@@ -3,20 +3,20 @@
 {% block content %}
 <header role="banner">
     <nav class="navbar nav-inner" aria-label="Navegação principal">
-        <div class="nav-logo">💔 Broken Relationships</div>
+        <div class="nav-logo"><i class="fa-solid fa-heart-crack" style="color: rgb(202, 46, 84);"></i> Broken Relationships</div>
         <div class="nav-recursos">
             <div class="amor-proprio-status">
                 <div class="amor-proprio-header">
-                    <span>❤️ Amor-Próprio:</span>
+                    <span><i class="fa-solid fa-heart" style="color: rgb(202, 46, 84);"></i> Amor-Próprio:</span>
                     <strong id="amor-valor">{{ user.amor_proprio }}</strong>/100
                 </div>
                 <div class="barra-progresso amor-bar">
                     <div class="barra-fill" id="amor-progresso" data-amor-proprio="{{ user.amor_proprio }}"></div>
                 </div>
-                <div class="estado-emocional" id="estado-emocional">{{ user_estado }}</div>
+                <div class="estado-emocional" id="estado-emocional">{{ user_estado|safe }}</div>
             </div>
             <div class="lagrimas-status">
-                <span>💧 Lágrimas disponíveis</span>
+                <span><i class="fa-solid fa-droplet" style="color: rgb(98, 195, 233);"></i> Lágrimas disponíveis</span>
                 <strong id="lagrimas-valor">{{ user.lagrimas }}</strong>
                 <small>Cada decisão custa {{ custo_decisao }} Lágrima</small>
             </div>
@@ -49,14 +49,14 @@
                         <img class="slot-icone-img" src="{{ url_for('static', filename=tipo_info.imagem) }}" alt="{{ tipo_info.nome }}">
                         <p>{{ tipo_info.nome }}</p>
                         <p class="slot-sub">{{ tipo_info.descricao }}</p>
-                        <p class="slot-custo">💧 {{ tipo_info.custo_lagrimas }} Lágrimas · ⏱ 1 min</p>
+                        <p class="slot-custo"><i class="fa-solid fa-droplet" style="color: rgb(98, 195, 233);"></i> {{ tipo_info.custo_lagrimas }} Lágrimas · <i class="fa-solid fa-stopwatch" style="color: rgb(80, 79, 79);"></i> 1 min</p>
                         <button type="button" class="btn btn-slot" data-action="construir" data-slot="{{ slot.numero }}" data-tipo="{{ slot.tipo }}" aria-label="Construir slot {{ slot.numero }}">Preparar espaço</button>
                     </div>
 
                     {% elif slot.estado == 'construindo' %}
                     {% set tipo_info = construcoes[slot.tipo] %}
                     <div class="slot-processando">
-                        <div class="slot-icone">🛠️</div>
+                        <img class="slot-icone-img" src="{{ url_for('static', filename=tipo_info.imagem) }}" alt="{{ tipo_info.nome }}">
                         <p>A preparar {{ tipo_info.nome }}</p>
                         <p class="slot-sub">O espaço ficará disponível quando a preparação terminar.</p>
                         <div class="barra-progresso">
@@ -72,8 +72,8 @@
                         <img class="slot-icone-img" src="{{ url_for('static', filename=tipo_info.imagem) }}" alt="{{ tipo_info.nome }}">
                         <p>{{ tipo_info.nome }}</p>
                         <p class="slot-meta">Momento {{ slot.etapa or 1 }} de {{ total_momentos }}</p>
-                        <p class="slot-sub estado-ativo">✅ Pronto para tarefas!</p>
-                        <button type="button" class="btn btn-slot btn-acao" data-action="abrirMenuTarefas" data-slot="{{ slot.numero }}" data-tipo="{{ slot.tipo }}" aria-label="Tomar Decisão ⭐ no slot {{ slot.numero }}">Tomar Decisão ⭐</button>
+                        <p class="slot-sub estado-ativo"><i class="fa-solid fa-square-check" style="color: rgb(52, 147, 76);"></i> Pronto para tarefas!</p>
+                        <button type="button" class="btn btn-slot btn-acao" data-action="abrirMenuTarefas" data-slot="{{ slot.numero }}" data-tipo="{{ slot.tipo }}" aria-label="Tomar Decisão no slot {{ slot.numero }}">Tomar Decisão <wa-icon name="star" style="color: rgb(226, 196, 83);"></wa-icon></button>
                     </div>
 
                     {% elif slot.estado == 'processando' %}
@@ -91,10 +91,10 @@
                     {% elif slot.estado == 'concluida' %}
                     {% set tipo_info = construcoes[slot.tipo] %}
                     <div class="slot-concluida">
-                        <div class="slot-icone">🎉</div>
+                        <img class="slot-icone-img" src="{{ url_for('static', filename=tipo_info.imagem) }}" alt="{{ tipo_info.nome }}">
                         <p>{{ tipo_info.nome }}</p>
                         <p class="slot-sub estado-concluida">{{ slot.tarefa_nome }}</p>
-                        <button type="button" class="btn btn-slot btn-recolher" data-action="recolher" data-slot="{{ slot.numero }}" aria-label="Tentar seguir em Frente slot {{ slot.numero }}">Tentar seguir em Frente ✨</button>
+                        <button type="button" class="btn btn-slot btn-recolher" data-action="recolher" data-slot="{{ slot.numero }}" aria-label="Tentar seguir em Frente slot {{ slot.numero }}">Tentar seguir em Frente <wa-icon name="star" style="color: rgb(226, 196, 83);"></wa-icon></button>
                     </div>
                     {% elif slot.estado == 'finalizado' %}
                     {% set tipo_info = construcoes[slot.tipo] %}
@@ -114,7 +114,7 @@
 
     <aside class="painel-lateral" aria-labelledby="painel-titulo">
         <div class="painel-secao">
-            <h3 id="painel-titulo">🏆 Top Amor-Próprio</h3>
+            <h3 id="painel-titulo"><i class="fa-solid fa-trophy" style="color: rgb(247, 195, 82);"></i> Top Amor-Próprio</h3>
             <table class="leaderboard">
                 <thead>
                     <tr><th>#</th><th>Nome</th><th>Amor-Próprio</th><th>Estado</th></tr>
@@ -123,15 +123,15 @@
                     {% for u in top_users %}
                     <tr class="{% if u.id == user.id %}linha-proprio{% endif %}">
                         <td>
-                            {% if loop.index == 1 %}🥇
-                            {% elif loop.index == 2 %}🥈
-                            {% elif loop.index == 3 %}🥉
+                            {% if loop.index == 1 %}<i class="fa-solid fa-medal" style="color: rgb(204, 165, 79);"></i>
+                            {% elif loop.index == 2 %}<i class="fa-solid fa-medal" style="color: rgb(154, 154, 154);"></i>
+                            {% elif loop.index == 3 %}<i class="fa-solid fa-medal" style="color: rgb(170, 112, 63);"></i>
                             {% else %}{{ loop.index }}
                             {% endif %}
                         </td>
                         <td title="{{ u.username }}">{{ u.username }}</td>
                         <td>{{ u.amor_proprio }}</td>
-                        <td>{{ u.estado }}</td>
+                        <td>{{ u.estado|safe }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -154,7 +154,7 @@
 <!-- MODAL: TAREFAS -->
 <div class="modal-overlay" id="modal-tarefas" style="display:none">
     <div class="modal">
-        <h3>📋 Escolhe uma tarefa</h3>
+        <h3><i class="fa-regular fa-clipboard" style="color: rgb(216, 152, 77);"></i> Escolhe uma tarefa</h3>
         <div class="opcoes-tarefas" id="opcoes-tarefas-lista"></div>
         <button type="button" class="btn btn-cancelar" data-action="fecharModal">Cancelar</button>
     </div>

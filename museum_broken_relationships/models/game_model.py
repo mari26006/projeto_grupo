@@ -31,16 +31,16 @@ def get_user(user_id):
 
 def get_estado_emocional(amor_proprio):
     if amor_proprio == 100:
-        return "❤️ Curado"
+        return '<i class="fa-solid fa-heart" style="color: rgb(202, 46, 84);"></i> Curado'
     if amor_proprio >= 81:
-        return "✨ Quase Curado"
+        return '<wa-icon name="star" style="color: rgb(226, 196, 83);"></wa-icon> Quase Curado'
     if amor_proprio >= 61:
-        return "✨ Confiante"
+        return '<wa-icon name="star" style="color: rgb(226, 196, 83);"></wa-icon> Confiante'
     if amor_proprio >= 41:
-        return "🌱 A Recuperar"
+        return '<i class="fa-solid fa-seedling" style="color: rgb(78, 134, 41);"></i> A Recuperar'
     if amor_proprio >= 21:
-        return "🌧 A Sofrer"
-    return "💔 Desolado"
+        return '<i class="fa-solid fa-cloud-showers-heavy" style="color: rgb(117, 111, 111);"></i> A Sofrer'
+    return '<i class="fa-solid fa-heart-crack" style="color: rgb(202, 46, 84);"></i> Desolado'
 
 
 def str_to_dt(value):

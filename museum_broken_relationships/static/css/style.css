@@ -9,6 +9,12 @@
     box-sizing: border-box;
 }
 
+wa-icon[name="star"]::before {
+    content: "\f005";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+}
+
 :root {
     --rosa-escuro: #c2607a;
     --castanho: #4a2c2a;
